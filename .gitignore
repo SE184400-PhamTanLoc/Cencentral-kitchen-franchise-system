@@ -1,0 +1,28 @@
+# ==========================================
+# 1. BỘ LỌC CHO BACKEND .NET (Visual Studio)
+# ==========================================
+.vs/
+[Dd]ebug/
+[Rr]elease/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ==========================================
+# 2. BỘ LỌC CHO FRONTEND FLUTTER
+# ==========================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.generated.dart
+
+# Mac & Windows OS files
+.DS_Store
+Thumbs.db
