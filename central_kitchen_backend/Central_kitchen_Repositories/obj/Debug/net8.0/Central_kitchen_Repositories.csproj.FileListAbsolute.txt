@@ -1,0 +1,12 @@
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\bin\Debug\net8.0\Central_kitchen_Repositories.deps.json
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\bin\Debug\net8.0\Central_kitchen_Repositories.dll
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\bin\Debug\net8.0\Central_kitchen_Repositories.pdb
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\Central_kitchen_Repositories.GeneratedMSBuildEditorConfig.editorconfig
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\Central_kitchen_Repositories.AssemblyInfoInputs.cache
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\Central_kitchen_Repositories.AssemblyInfo.cs
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\Central_kitchen_Repositories.csproj.CoreCompileInputs.cache
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\Central_kitchen_Repositories.sourcelink.json
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\Central_kitchen_Repositories.dll
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\refint\Central_kitchen_Repositories.dll
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\Central_kitchen_Repositories.pdb
+D:\Project_PRM393\central_kitchen_backend\Central_kitchen_Repositories\obj\Debug\net8.0\ref\Central_kitchen_Repositories.dll

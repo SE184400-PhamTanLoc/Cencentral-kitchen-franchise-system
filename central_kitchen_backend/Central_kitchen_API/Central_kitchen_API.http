@@ -1,0 +1,6 @@
+@Central_kitchen_API_HostAddress = http://localhost:5170
+
+GET {{Central_kitchen_API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
