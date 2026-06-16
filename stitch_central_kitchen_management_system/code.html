@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - Central Kitchen Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .geometric-watermark {
+            background-image: radial-gradient(#e5e7eb 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#f0f1f3",
+                        "tertiary": "#00311f",
+                        "on-tertiary-container": "#27c38a",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#d8e2ff",
+                        "primary": "#00236f",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#b6c4ff",
+                        "on-tertiary-fixed": "#002113",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "secondary-container": "#2170e4",
+                        "surface": "#f8f9fb",
+                        "tertiary-container": "#004a31",
+                        "surface-container": "#edeef0",
+                        "background": "#f8f9fb",
+                        "on-primary-fixed-variant": "#264191",
+                        "surface-container-high": "#e7e8ea",
+                        "primary-fixed": "#dce1ff",
+                        "on-background": "#191c1e",
+                        "on-primary-fixed": "#00164e",
+                        "tertiary-fixed": "#6ffbbe",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "surface-variant": "#e1e2e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-secondary-fixed": "#001a42",
+                        "on-surface": "#191c1e",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c5c5d3",
+                        "surface-container-highest": "#e1e2e4",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "surface-bright": "#f8f9fb",
+                        "primary-container": "#1e3a8a",
+                        "inverse-surface": "#2e3132",
+                        "secondary": "#0058be",
+                        "on-secondary-container": "#fefcff",
+                        "surface-tint": "#4059aa",
+                        "on-surface-variant": "#444651",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-primary-container": "#90a8ff",
+                        "outline": "#757682",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#d9dadc",
+                        "surface-container-low": "#f3f4f6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin": "24px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md text-body-md overflow-hidden h-screen flex items-center justify-center">
+<!-- Subtle Geometric Watermark Layer -->
+<div class="fixed inset-0 pointer-events-none geometric-watermark opacity-20"></div>
+<main class="relative z-10 w-full max-w-[440px] px-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
+<!-- Login Container -->
+<div class="bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant p-xl flex flex-col gap-xl">
+<!-- Branding Header -->
+<div class="flex flex-col items-center gap-md text-center">
+<div class="w-16 h-16 bg-primary flex items-center justify-center rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-on-primary text-[40px]" data-icon="restaurant_menu">restaurant_menu</span>
+</div>
+<div class="flex flex-col gap-xs">
+<h1 class="font-headline-sm text-headline-sm text-primary">Central Kitchen Pro</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Logistics &amp; Supply Chain Management</p>
+</div>
+</div>
+<!-- Login Form -->
+<form class="flex flex-col gap-lg" id="loginForm" onsubmit="return false;">
+<!-- Email Field -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant ml-xs uppercase" for="email">Enterprise Email</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" data-icon="mail">mail</span>
+<input class="w-full h-12 pl-12 pr-md bg-surface-bright border border-outline rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-lg text-body-lg" id="email" name="email" placeholder="name@company.com" required="" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant ml-xs uppercase" for="password">Password</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" data-icon="lock">lock</span>
+<input class="w-full h-12 pl-12 pr-12 bg-surface-bright border border-outline rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body-lg text-body-lg" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+<button class="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors" onclick="togglePassword()" type="button">
+<span class="material-symbols-outlined" data-icon="visibility" id="passIcon">visibility</span>
+</button>
+</div>
+<div class="flex justify-end">
+<a class="text-label-md font-label-md text-secondary hover:underline" href="#">Forgot Enterprise Password?</a>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full h-12 bg-primary hover:bg-primary-container text-on-primary font-title-lg text-title-lg rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-sm" type="submit">
+                    Login
+                    <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<!-- SSO/Help Area -->
+<div class="flex flex-col gap-md">
+<div class="flex items-center gap-md">
+<div class="h-[1px] flex-1 bg-outline-variant"></div>
+<span class="text-label-md font-label-md text-on-surface-variant uppercase">Admin Support</span>
+<div class="h-[1px] flex-1 bg-outline-variant"></div>
+</div>
+<button class="w-full h-11 border border-outline text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container transition-colors flex items-center justify-center gap-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="contact_support">contact_support</span>
+                    Contact Corporate IT Support
+                </button>
+</div>
+</div>
+<!-- Footer -->
+<footer class="mt-xl flex flex-col items-center gap-sm">
+<div class="flex gap-md items-center text-label-md font-label-md text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Security Standards</a>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+</div>
+<p class="text-[10px] text-on-surface-variant font-label-md opacity-60">System v4.2.0 • Build 2023.11.24</p>
+</footer>
+</main>
+<!-- Visual Enhancements -->
+<div class="absolute bottom-[-10%] right-[-5%] w-64 h-64 bg-primary-fixed-dim opacity-10 rounded-full blur-3xl"></div>
+<div class="absolute top-[-5%] left-[-2%] w-48 h-48 bg-secondary-fixed-dim opacity-10 rounded-full blur-2xl"></div>
+<script>
+        function togglePassword() {
+            const passInput = document.getElementById('password');
+            const passIcon = document.getElementById('passIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                passIcon.textContent = 'visibility_off';
+            } else {
+                passInput.type = 'password';
+                passIcon.textContent = 'visibility';
+            }
+        }
+
+        // Micro-interaction for form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Authorizing...
+            `;
+            
+            // Simulate API call
+            setTimeout(() => {
+                btn.innerHTML = `
+                    <span class="material-symbols-outlined text-[20px]" data-icon="check_circle">check_circle</span>
+                    Success
+                `;
+                btn.classList.replace('bg-primary', 'bg-tertiary-container');
+                btn.classList.add('text-on-tertiary-container');
+                setTimeout(() => {
+                    alert('Login successful! Redirecting to Inventory Dashboard...');
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    btn.classList.replace('bg-tertiary-container', 'bg-primary');
+                    btn.classList.remove('text-on-tertiary-container');
+                }, 1000);
+            }, 1500);
+        });
+    </script>
+</body></html>
