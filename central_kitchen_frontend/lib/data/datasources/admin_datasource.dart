@@ -1,12 +1,11 @@
-import 'package:dio/dio.dart';
 import '../../core/network/api_client.dart';
-import '../../core/constants/api_constants.dart';
 import '../models/user_model.dart';
 import '../models/store_model.dart';
 import '../models/kitchen_model.dart';
 
 /// Lớp thực hiện gọi các API dành riêng cho vai trò quản trị (Admin).
 class AdminDatasource {
+  // ignore: unused_field
   final ApiClient _apiClient;
 
   AdminDatasource(this._apiClient);

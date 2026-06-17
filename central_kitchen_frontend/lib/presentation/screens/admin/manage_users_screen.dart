@@ -325,7 +325,7 @@ class _UserEditDialogState extends State<_UserEditDialog> {
 
               // Dropdown Chọn Vai trò (RoleId)
               DropdownButtonFormField<int>(
-                value: _selectedRoleId,
+                initialValue: _selectedRoleId,
                 decoration: const InputDecoration(labelText: 'Vai trò'),
                 items: const [
                   DropdownMenuItem(value: 1, child: Text('Admin')),
@@ -349,7 +349,7 @@ class _UserEditDialogState extends State<_UserEditDialog> {
               // Dropdown Chọn Bếp (Nếu vai trò là Nhân viên Bếp - RoleId = 3)
               if (_selectedRoleId == 3)
                 DropdownButtonFormField<int>(
-                  value: _selectedKitchenId,
+                  initialValue: _selectedKitchenId,
                   decoration: const InputDecoration(labelText: 'Chọn Bếp phân công'),
                   items: adminProv.kitchens.map((k) {
                     return DropdownMenuItem(value: k.kitchenId, child: Text(k.kitchenName));
@@ -361,7 +361,7 @@ class _UserEditDialogState extends State<_UserEditDialog> {
               // Dropdown Chọn Cửa hàng (Nếu vai trò là Nhân viên Cửa hàng - RoleId = 2)
               if (_selectedRoleId == 2)
                 DropdownButtonFormField<int>(
-                  value: _selectedStoreId,
+                  initialValue: _selectedStoreId,
                   decoration: const InputDecoration(labelText: 'Chọn Cửa hàng phân công'),
                   items: adminProv.stores.map((s) {
                     return DropdownMenuItem(value: s.storeId, child: Text(s.storeName));

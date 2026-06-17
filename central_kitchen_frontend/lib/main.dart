@@ -37,10 +37,10 @@ class MyApp extends StatelessWidget {
         
         // 2. Tạo các Datasources phụ thuộc vào ApiClient
         ProxyProvider<ApiClient, AuthDatasource>(
-          update: (_, apiClient, __) => AuthDatasource(apiClient),
+          update: (_, apiClient, _) => AuthDatasource(apiClient),
         ),
         ProxyProvider<ApiClient, AdminDatasource>(
-          update: (_, apiClient, __) => AdminDatasource(apiClient),
+          update: (_, apiClient, _) => AdminDatasource(apiClient),
         ),
         
         // 3. Tạo các Providers quản lý State, phụ thuộc vào các Datasources tương ứng

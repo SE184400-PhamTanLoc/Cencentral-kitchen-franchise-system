@@ -10,7 +10,7 @@ class AdminProvider with ChangeNotifier {
   final AdminDatasource _adminDatasource;
 
   // --- TRẠNG THÁI (State Variables) ---
-  List<UserModel> _users = [];
+  final List<UserModel> _users = [];
   List<StoreModel> _stores = [];
   List<KitchenModel> _kitchens = [];
   bool _isLoading = false;
