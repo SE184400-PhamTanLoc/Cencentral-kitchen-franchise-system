@@ -156,31 +156,27 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
       text: existingBatch?.expiryDate.toIso8601String().split('T').first ?? '',
     );
 
-    await showModalBottomSheet(
+    await showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 10,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: StatefulBuilder(
-            builder: (context, setState) {
+          backgroundColor: Colors.white,
+          insetPadding: const EdgeInsets.all(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: StatefulBuilder(
+              builder: (dialogContext, setState) {
               Future<void> pickDate(TextEditingController controller) async {
                 final selected = await showDatePicker(
-                  context: context,
+                  context: dialogContext,
                   initialDate: DateTime.now(),
                   firstDate: DateTime.now().subtract(const Duration(days: 3650)),
                   lastDate: DateTime.now().add(const Duration(days: 3650)),
                 );
-                if (selected != null && context.mounted) {
+                if (selected != null && dialogContext.mounted) {
                   controller.text = selected.toIso8601String().split('T').first;
                   setState(() {});
                 }
@@ -191,9 +187,20 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      isEditMode ? 'Cập nhật lô sản xuất' : 'Tạo lô sản xuất',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          isEditMode ? 'Cập nhật lô sản xuất' : 'Tạo lô sản xuất',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(dialogContext),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Text(ingredient.name, style: const TextStyle(color: AppTheme.onSurfaceVariant)),
@@ -260,9 +267,9 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                               ? await inventoryProvider.updateBatch(existingBatch.batchId, payload)
                               : await inventoryProvider.createBatch(payload);
 
-                          if (!context.mounted) return;
+                          if (!dialogContext.mounted) return;
                           if (success) {
-                            Navigator.pop(context);
+                            Navigator.pop(dialogContext);
                             await inventoryProvider.fetchIngredientDetail(ingredient.ingredientId);
                             messenger.showSnackBar(
                               SnackBar(content: Text(isEditMode ? 'Cập nhật lô thành công!' : 'Tạo lô thành công!')),
@@ -281,9 +288,10 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
               );
             },
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 
   Future<void> _confirmDeleteBatch(BuildContext context, BatchModel batch) async {

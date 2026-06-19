@@ -12,5 +12,7 @@ public interface IInventoryService
     Task<BatchResponseDto?> UpdateBatchAsync(int batchId, UpdateBatchDto dto);
     Task<bool> DeleteBatchAsync(int batchId);
     Task<ProductionPlanResponseDto> BuildProductionPlanAsync(ProductionPlanRequestDto dto);
+    Task<List<PendingOrderDto>> GetPendingOrdersAsync(int kitchenId);
+    Task<ProductionPlanResponseDto> BuildAutoProductionPlanAsync(int kitchenId);
 }
 

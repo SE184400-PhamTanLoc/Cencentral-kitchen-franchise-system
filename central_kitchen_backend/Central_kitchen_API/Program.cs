@@ -29,6 +29,7 @@ builder.Services.AddScoped<ICentralKitchenRepository, CentralKitchenRepository>(
 builder.Services.AddScoped<IIngredientRepository, IngredientRepository>();
 builder.Services.AddScoped<IBatchRepository, BatchRepository>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();

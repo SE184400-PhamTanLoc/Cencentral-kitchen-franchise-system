@@ -117,5 +117,35 @@ public class KitchenInventoryController : ControllerBase
             return BadRequest(new { success = false, message = ex.Message });
         }
     }
+    [HttpGet("orders/pending")]
+    public async Task<IActionResult> GetPendingOrders([FromQuery] int kitchenId)
+    {
+        var orders = await _inventoryService.GetPendingOrdersAsync(kitchenId);
+        return Ok(new
+        {
+            success = true,
+            message = "Lấy danh sách đơn hàng chờ thành công.",
+            data = orders
+        });
+    }
+
+    [HttpPost("production-plan/auto")]
+    public async Task<IActionResult> BuildAutoProductionPlan([FromQuery] int kitchenId)
+    {
+        try
+        {
+            var plan = await _inventoryService.BuildAutoProductionPlanAsync(kitchenId);
+            return Ok(new
+            {
+                success = true,
+                message = "Tự động tính toán BOM từ các đơn hàng chờ thành công.",
+                data = plan
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
 }
 

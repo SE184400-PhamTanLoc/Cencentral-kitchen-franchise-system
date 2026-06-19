@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/datasources/inventory_datasource.dart';
 import '../../data/models/batch_model.dart';
 import '../../data/models/ingredient_model.dart';
+import '../../data/models/pending_order_model.dart';
 import '../../data/models/production_plan_model.dart';
 
 class InventoryProvider with ChangeNotifier {
@@ -19,9 +20,12 @@ class InventoryProvider with ChangeNotifier {
   String _batchStatusFilter = 'all';
   IngredientModel? _selectedIngredient;
   ProductionPlanModel? _productionPlan;
+  List<PendingOrderModel> _pendingOrders = [];
+  ProductionPlanModel? _autoProductionPlan;
 
   List<IngredientModel> get ingredients => _ingredients;
   List<BatchModel> get batches => _batches;
+  List<PendingOrderModel> get pendingOrders => _pendingOrders;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String get searchQuery => _searchQuery;
@@ -30,6 +34,7 @@ class InventoryProvider with ChangeNotifier {
   String get batchStatusFilter => _batchStatusFilter;
   IngredientModel? get selectedIngredient => _selectedIngredient;
   ProductionPlanModel? get productionPlan => _productionPlan;
+  ProductionPlanModel? get autoProductionPlan => _autoProductionPlan;
 
   List<IngredientModel> get filteredIngredients {
     return _ingredients.where((item) {
@@ -231,5 +236,42 @@ class InventoryProvider with ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<void> fetchPendingOrders(int kitchenId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final data = await _inventoryDatasource.getPendingOrders(kitchenId);
+      _pendingOrders = data.map((json) => PendingOrderModel.fromJson(Map<String, dynamic>.from(json as Map))).toList();
+    } catch (e) {
+      _errorMessage = 'Không thể tải danh sách đơn hàng chờ.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> buildAutoProductionPlan(int kitchenId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      _autoProductionPlan = await _inventoryDatasource.buildAutoProductionPlan(kitchenId);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Lỗi tính BOM tự động.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void clearAutoProductionPlan() {
+    _autoProductionPlan = null;
+    notifyListeners();
   }
 }

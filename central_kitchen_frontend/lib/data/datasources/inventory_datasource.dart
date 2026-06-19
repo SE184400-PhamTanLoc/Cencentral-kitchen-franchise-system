@@ -58,4 +58,20 @@ class InventoryDatasource {
     final response = await _apiClient.post(InventoryEndpoints.productionPlan, data: payload);
     return ProductionPlanModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
   }
+
+  Future<List<dynamic>> getPendingOrders(int kitchenId) async {
+    final response = await _apiClient.get(
+      InventoryEndpoints.pendingOrders,
+      queryParameters: {'kitchenId': kitchenId},
+    );
+    return response.data['data'] ?? [];
+  }
+
+  Future<ProductionPlanModel> buildAutoProductionPlan(int kitchenId) async {
+    final response = await _apiClient.post(
+      InventoryEndpoints.autoProductionPlan,
+      queryParameters: {'kitchenId': kitchenId},
+    );
+    return ProductionPlanModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+  }
 }

@@ -12,17 +12,20 @@ public class InventoryService : IInventoryService
     private readonly IBatchRepository _batchRepository;
     private readonly ICentralKitchenRepository _kitchenRepository;
     private readonly IRecipeRepository _recipeRepository;
+    private readonly IOrderRepository _orderRepository;
 
     public InventoryService(
         IIngredientRepository ingredientRepository,
         IBatchRepository batchRepository,
         ICentralKitchenRepository kitchenRepository,
-        IRecipeRepository recipeRepository)
+        IRecipeRepository recipeRepository,
+        IOrderRepository orderRepository)
     {
         _ingredientRepository = ingredientRepository;
         _batchRepository = batchRepository;
         _kitchenRepository = kitchenRepository;
         _recipeRepository = recipeRepository;
+        _orderRepository = orderRepository;
     }
 
     public async Task<List<IngredientSummaryDto>> GetIngredientsAsync(bool? isRawMaterial = null, string? keyword = null)
@@ -188,6 +191,90 @@ public class InventoryService : IInventoryService
             OutputSku = outputIngredient.Sku,
             RecipeDescription = recipe.Description,
             RequestedQuantity = dto.RequestedQuantity,
+            Materials = materials
+        };
+    }
+
+    public async Task<List<PendingOrderDto>> GetPendingOrdersAsync(int kitchenId)
+    {
+        var orders = await _orderRepository.GetPendingOrdersByKitchenAsync(kitchenId);
+        return orders.Select(o => new PendingOrderDto
+        {
+            OrderId = o.OrderId,
+            OrderCode = o.OrderCode,
+            StoreId = o.StoreId,
+            StoreName = o.Store.StoreName,
+            OrderStatus = o.OrderStatus,
+            CreatedAt = o.CreatedAt,
+            OrderDetails = o.OrderDetails.Select(od => new PendingOrderDetailDto
+            {
+                IngredientId = od.IngredientId,
+                IngredientName = od.Ingredient.Name,
+                Unit = od.Ingredient.Unit,
+                QuantityOrdered = od.QuantityOrdered
+            }).ToList()
+        }).ToList();
+    }
+
+    public async Task<ProductionPlanResponseDto> BuildAutoProductionPlanAsync(int kitchenId)
+    {
+        var orders = await _orderRepository.GetPendingOrdersByKitchenAsync(kitchenId);
+        
+        // Gộp tất cả các Ingredient yêu cầu từ các đơn
+        var requestedTotals = new Dictionary<int, decimal>();
+        foreach (var order in orders)
+        {
+            foreach (var detail in order.OrderDetails)
+            {
+                if (requestedTotals.ContainsKey(detail.IngredientId))
+                {
+                    requestedTotals[detail.IngredientId] += detail.QuantityOrdered;
+                }
+                else
+                {
+                    requestedTotals[detail.IngredientId] = detail.QuantityOrdered;
+                }
+            }
+        }
+
+        var rawTotals = new Dictionary<int, decimal>();
+        foreach (var req in requestedTotals)
+        {
+            var ingredientId = req.Key;
+            var quantity = req.Value;
+            await ExpandToRawMaterialsAsync(ingredientId, quantity, rawTotals, new HashSet<int>());
+        }
+
+        var rawIngredients = await _ingredientRepository.GetByIdsAsync(rawTotals.Keys);
+        var ingredientLookup = rawIngredients.ToDictionary(i => i.IngredientId, i => i);
+
+        var materials = rawTotals
+            .Select(pair =>
+            {
+                var ingredient = ingredientLookup[pair.Key];
+                var availableQuantity = GetAvailableQuantity(ingredient);
+                return new ProductionPlanItemDto
+                {
+                    IngredientId = ingredient.IngredientId,
+                    IngredientName = ingredient.Name,
+                    Sku = ingredient.Sku,
+                    Unit = ingredient.Unit,
+                    IsRawMaterial = ingredient.IsRawMaterial ?? true,
+                    RequiredQuantity = pair.Value,
+                    AvailableQuantity = availableQuantity,
+                    ShortageQuantity = Math.Max(0, pair.Value - availableQuantity)
+                };
+            })
+            .OrderBy(x => x.IngredientName)
+            .ToList();
+
+        return new ProductionPlanResponseDto
+        {
+            OutputIngredientId = 0,
+            OutputIngredientName = "Auto Plan (Multiple Orders)",
+            OutputSku = "AUTO",
+            RecipeDescription = $"Plan generated for {orders.Count} pending orders.",
+            RequestedQuantity = 1, // Dùng tượng trưng
             Materials = materials
         };
     }
