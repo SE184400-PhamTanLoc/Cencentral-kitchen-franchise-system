@@ -18,6 +18,7 @@ class KitchenInventoryManagementScreen extends StatefulWidget {
 class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManagementScreen> {
   final _bomQuantityController = TextEditingController(text: '1');
   int? _selectedIngredientId;
+  int _selectedSectionIndex = 0;
 
   @override
   void initState() {
@@ -34,6 +35,70 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
     super.dispose();
   }
 
+  Future<void> _logout(BuildContext context) async {
+    final auth = context.read<AuthProvider>();
+    await auth.logout();
+    if (!context.mounted) return;
+    Navigator.of(context).pushReplacementNamed('/login');
+  }
+
+  void _openUserMenu(BuildContext context) {
+    final auth = context.read<AuthProvider>();
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: AppTheme.primary,
+                    child: Text(
+                      _avatarInitial(auth.currentUser?.fullName),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  title: Text(auth.currentUser?.fullName ?? 'Nhân viên bếp'),
+                  subtitle: Text(auth.currentUser?.roleName ?? 'Kitchen staff'),
+                ),
+                const SizedBox(height: 8),
+                _MenuTile(
+                  icon: Icons.badge_outlined,
+                  title: 'Trang cá nhân',
+                  subtitle: 'Xem thông tin tài khoản hiện tại',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    setState(() => _selectedSectionIndex = 0);
+                  },
+                ),
+                const SizedBox(height: 10),
+                _MenuTile(
+                  icon: Icons.logout_outlined,
+                  title: 'Đăng xuất',
+                  subtitle: 'Thoát khỏi tài khoản hiện tại',
+                  danger: true,
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    await _logout(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -41,113 +106,156 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
     final ingredients = provider.filteredIngredients;
     final batches = provider.filteredBatches;
     final selectedIngredient = _findIngredient(provider.ingredients, _selectedIngredientId);
+    final pages = <Widget>[
+      _OverviewTab(
+        ingredientCount: provider.ingredients.length,
+        batchCount: provider.batches.length,
+        lowStockCount: provider.ingredients.where((item) => item.availableQuantity <= item.minStockLevel).length,
+        expiredBatchCount: provider.batches.where((batch) => batch.isExpired).length,
+        onImportStock: () => _openQuickBatchSheet(context, auth.kitchenId, provider.ingredients),
+        onOpenBom: () => setState(() => _selectedSectionIndex = 3),
+      ),
+      _IngredientsTab(
+        ingredients: ingredients,
+        searchQuery: provider.searchQuery,
+        rawFilter: provider.rawFilter,
+        onSearchChanged: (value) {
+          provider.setSearchQuery(value);
+          provider.fetchIngredients(keyword: value);
+        },
+        onFilterChanged: (value) {
+          provider.setRawFilter(value);
+          provider.fetchIngredients(isRawMaterial: value);
+        },
+        onTapIngredient: (ingredient) {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: ingredient)),
+          );
+        },
+      ),
+      _BatchesTab(
+        batches: batches,
+        searchQuery: provider.batchSearchQuery,
+        statusFilter: provider.batchStatusFilter,
+        ingredientLookup: {
+          for (final ingredient in provider.ingredients) ingredient.ingredientId: ingredient,
+        },
+        onSearchChanged: provider.setBatchSearchQuery,
+        onFilterChanged: provider.setBatchStatusFilter,
+        onTapBatch: (batch) {
+          final ingredient = provider.ingredients.firstWhere(
+            (item) => item.ingredientId == batch.ingredientId,
+            orElse: () => provider.ingredients.isNotEmpty ? provider.ingredients.first : _fallbackIngredient(batch),
+          );
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: ingredient)),
+          );
+        },
+      ),
+      _BomTab(
+        ingredients: provider.ingredients,
+        selectedIngredientId: _selectedIngredientId,
+        selectedIngredient: selectedIngredient,
+        quantityController: _bomQuantityController,
+        productionPlan: provider.productionPlan,
+        onIngredientChanged: (value) => setState(() => _selectedIngredientId = value),
+        onCalculate: () async {
+          final ingredientId = _selectedIngredientId;
+          if (ingredientId == null) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn nguyên liệu đầu ra.')));
+            return;
+          }
+          final qty = double.tryParse(_bomQuantityController.text) ?? 0;
+          if (qty <= 0) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Số lượng phải lớn hơn 0.')));
+            return;
+          }
+          final success = await provider.buildProductionPlan(ingredientId, qty);
+          if (!context.mounted) return;
+          if (!success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(provider.errorMessage ?? 'Không thể tính BOM.')),
+            );
+          }
+        },
+        onClear: provider.clearProductionPlan,
+      ),
+    ];
 
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        backgroundColor: AppTheme.background,
-        appBar: AppBar(
-          title: const Text('Quản lý tồn kho theo bếp'),
-          backgroundColor: Colors.transparent,
-          foregroundColor: AppTheme.primary,
-          elevation: 0,
-          actions: [
-            IconButton(
-              tooltip: 'Tải lại',
-              onPressed: () => context.read<InventoryProvider>().loadKitchenInventory(kitchenId: auth.kitchenId),
-              icon: const Icon(Icons.refresh_outlined),
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        titleSpacing: 20,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppTheme.primary,
+        elevation: 0,
+        toolbarHeight: 78,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Xin chào, ${auth.currentUser?.fullName ?? 'Nhân viên bếp'}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primary),
+            ),
+            const SizedBox(height: 3),
+            const Text(
+              'Quản lý kho bếp và thao tác nhanh',
+              style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
             ),
           ],
-          bottom: const TabBar(
-            isScrollable: true,
-            labelColor: AppTheme.primary,
-            unselectedLabelColor: AppTheme.onSurfaceVariant,
-            indicatorColor: AppTheme.primary,
-            tabs: [
-              Tab(text: 'Tổng quan', icon: Icon(Icons.dashboard_outlined)),
-              Tab(text: 'Nguyên liệu', icon: Icon(Icons.inventory_2_outlined)),
-              Tab(text: 'Batches', icon: Icon(Icons.view_list_outlined)),
-              Tab(text: 'BOM', icon: Icon(Icons.calculate_outlined)),
-            ],
-          ),
         ),
-        body: provider.isLoading && provider.ingredients.isEmpty && provider.batches.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : TabBarView(
-                children: [
-                  _OverviewTab(
-                    ingredientCount: provider.ingredients.length,
-                    batchCount: provider.batches.length,
-                    lowStockCount: provider.ingredients.where((item) => item.availableQuantity <= item.minStockLevel).length,
-                    expiredBatchCount: provider.batches.where((batch) => batch.isExpired).length,
-                  ),
-                  _IngredientsTab(
-                    ingredients: ingredients,
-                    searchQuery: provider.searchQuery,
-                    rawFilter: provider.rawFilter,
-                    onSearchChanged: (value) {
-                      provider.setSearchQuery(value);
-                      provider.fetchIngredients(keyword: value);
-                    },
-                    onFilterChanged: (value) {
-                      provider.setRawFilter(value);
-                      provider.fetchIngredients(isRawMaterial: value);
-                    },
-                    onTapIngredient: (ingredient) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: ingredient)),
-                      );
-                    },
-                  ),
-                  _BatchesTab(
-                    batches: batches,
-                    searchQuery: provider.batchSearchQuery,
-                    statusFilter: provider.batchStatusFilter,
-                    ingredientLookup: {
-                      for (final ingredient in provider.ingredients) ingredient.ingredientId: ingredient,
-                    },
-                    onSearchChanged: provider.setBatchSearchQuery,
-                    onFilterChanged: provider.setBatchStatusFilter,
-                    onTapBatch: (batch) {
-                      final ingredient = provider.ingredients.firstWhere(
-                        (item) => item.ingredientId == batch.ingredientId,
-                        orElse: () => provider.ingredients.isNotEmpty ? provider.ingredients.first : _fallbackIngredient(batch),
-                      );
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: ingredient)),
-                      );
-                    },
-                  ),
-                  _BomTab(
-                    ingredients: provider.ingredients,
-                    selectedIngredientId: _selectedIngredientId,
-                    selectedIngredient: selectedIngredient,
-                    quantityController: _bomQuantityController,
-                    productionPlan: provider.productionPlan,
-                    onIngredientChanged: (value) => setState(() => _selectedIngredientId = value),
-                    onCalculate: () async {
-                      final ingredientId = _selectedIngredientId;
-                      if (ingredientId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn nguyên liệu đầu ra.')));
-                        return;
-                      }
-                      final qty = double.tryParse(_bomQuantityController.text) ?? 0;
-                      if (qty <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Số lượng phải lớn hơn 0.')));
-                        return;
-                      }
-                      final success = await provider.buildProductionPlan(ingredientId, qty);
-                      if (!context.mounted) return;
-                      if (!success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(provider.errorMessage ?? 'Không thể tính BOM.')),
-                        );
-                      }
-                    },
-                    onClear: provider.clearProductionPlan,
-                  ),
-                ],
+        actions: [
+          IconButton(
+            tooltip: 'Tải lại',
+            onPressed: () => context.read<InventoryProvider>().loadKitchenInventory(kitchenId: auth.kitchenId),
+            icon: const Icon(Icons.refresh_outlined),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: () => _openUserMenu(context),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppTheme.primary,
+                child: Text(
+                  _avatarInitial(auth.currentUser?.fullName),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                ),
               ),
+            ),
+          ),
+        ],
+      ),
+      body: provider.isLoading && provider.ingredients.isEmpty && provider.batches.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : pages[_selectedSectionIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedSectionIndex,
+        onTap: (index) => setState(() => _selectedSectionIndex = index),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppTheme.primary,
+        unselectedItemColor: AppTheme.onSurfaceVariant,
+        elevation: 12,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            label: 'Tổng quan',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_outlined),
+            label: 'Nguyên liệu',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.view_list_outlined),
+            label: 'Batches',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calculate_outlined),
+            label: 'BOM',
+          ),
+        ],
       ),
     );
   }
@@ -181,6 +289,12 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
       recipeInputs: const [],
     );
   }
+
+  String _avatarInitial(String? fullName) {
+    final name = (fullName ?? 'K').trim();
+    if (name.isEmpty) return 'K';
+    return name.characters.first.toUpperCase();
+  }
 }
 
 class _OverviewTab extends StatelessWidget {
@@ -188,12 +302,16 @@ class _OverviewTab extends StatelessWidget {
   final int batchCount;
   final int lowStockCount;
   final int expiredBatchCount;
+  final VoidCallback onImportStock;
+  final VoidCallback onOpenBom;
 
   const _OverviewTab({
     required this.ingredientCount,
     required this.batchCount,
     required this.lowStockCount,
     required this.expiredBatchCount,
+    required this.onImportStock,
+    required this.onOpenBom,
   });
 
   @override
@@ -203,9 +321,48 @@ class _OverviewTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _HeaderPanel(
-            ingredientCount: ingredientCount,
-            batchCount: batchCount,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: Colors.white,
+              border: Border.all(color: AppTheme.outlineVariant),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Tổng quan kho bếp',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Quản lý nguyên liệu, batch và BOM ngay từ màn này.',
+                  style: TextStyle(color: AppTheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: onImportStock,
+                        icon: const Icon(Icons.playlist_add_circle_outlined),
+                        label: const Text('Nhập kho'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: onOpenBom,
+                        icon: const Icon(Icons.calculate_outlined),
+                        label: const Text('Mở BOM'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -230,71 +387,199 @@ class _OverviewTab extends StatelessWidget {
   }
 }
 
-class _HeaderPanel extends StatelessWidget {
-  final int ingredientCount;
-  final int batchCount;
+extension on _KitchenInventoryManagementScreenState {
+  Future<void> _openQuickBatchSheet(
+    BuildContext hostContext,
+    int? kitchenId,
+    List<IngredientModel> ingredients,
+  ) async {
+    if (ingredients.isEmpty) {
+      ScaffoldMessenger.of(hostContext).showSnackBar(
+        const SnackBar(content: Text('Chưa có nguyên liệu để nhập kho.')),
+      );
+      return;
+    }
 
-  const _HeaderPanel({required this.ingredientCount, required this.batchCount});
+    final ingredientIdController = TextEditingController(text: ingredients.first.ingredientId.toString());
+    final batchCodeController = TextEditingController();
+    final quantityController = TextEditingController(text: '1');
+    final remainingController = TextEditingController(text: '1');
+    final manufactureDateController = TextEditingController(text: DateTime.now().toIso8601String().split('T').first);
+    final expiryDateController = TextEditingController();
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF00236F), Color(0xFF0058BE)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+    await showModalBottomSheet(
+      context: hostContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Kitchen inventory control', style: TextStyle(color: Colors.white70, fontSize: 13)),
-          const SizedBox(height: 8),
-          const Text(
-            'Theo dõi kho bếp theo lô, hạn dùng và BOM',
-            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 12,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _MiniStat(label: 'Nguyên liệu', value: ingredientCount.toString()),
-              const SizedBox(width: 10),
-              _MiniStat(label: 'Batches', value: batchCount.toString()),
-            ],
+          child: StatefulBuilder(
+            builder: (sheetContext, setState) {
+              Future<void> pickDate(TextEditingController controller) async {
+                final initialDate = DateTime.tryParse(controller.text) ?? DateTime.now();
+                final selected = await showDatePicker(
+                  context: sheetContext,
+                  initialDate: initialDate,
+                  firstDate: DateTime.now().subtract(const Duration(days: 3650)),
+                  lastDate: DateTime.now().add(const Duration(days: 3650)),
+                );
+                if (selected != null && sheetContext.mounted) {
+                  controller.text = selected.toIso8601String().split('T').first;
+                  setState(() {});
+                }
+              }
+
+              final selectedIngredientId = int.tryParse(ingredientIdController.text);
+              final selectedIngredient = ingredients.firstWhere(
+                (item) => item.ingredientId == selectedIngredientId,
+                orElse: () => ingredients.first,
+              );
+
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Nhập kho nhanh',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Tạo batch mới để ghi nhận nguyên liệu vừa nhập về bếp.',
+                      style: TextStyle(color: AppTheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 18),
+                    DropdownButtonFormField<int>(
+                      value: selectedIngredient.ingredientId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Nguyên liệu'),
+                      items: ingredients
+                          .map(
+                            (ingredient) => DropdownMenuItem<int>(
+                              value: ingredient.ingredientId,
+                              child: Text(ingredient.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        ingredientIdController.text = value.toString();
+                        setState(() {});
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: batchCodeController,
+                            decoration: const InputDecoration(labelText: 'Mã lô'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: quantityController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Tổng số lượng'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: remainingController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Số lượng còn lại'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: manufactureDateController,
+                            readOnly: true,
+                            onTap: () => pickDate(manufactureDateController),
+                            decoration: const InputDecoration(
+                              labelText: 'Ngày sản xuất',
+                              suffixIcon: Icon(Icons.date_range_outlined),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: expiryDateController,
+                      readOnly: true,
+                      onTap: () => pickDate(expiryDateController),
+                      decoration: const InputDecoration(
+                        labelText: 'Hạn sử dụng',
+                        suffixIcon: Icon(Icons.event_available_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final ingredientId = int.tryParse(ingredientIdController.text);
+                          final quantity = double.tryParse(quantityController.text) ?? 0;
+                          final remaining = double.tryParse(remainingController.text) ?? 0;
+
+                          if (ingredientId == null || batchCodeController.text.trim().isEmpty || quantity <= 0 || expiryDateController.text.isEmpty) {
+                            ScaffoldMessenger.of(sheetContext).showSnackBar(
+                              const SnackBar(content: Text('Vui lòng nhập đủ nguyên liệu, mã lô, số lượng và hạn sử dụng.')),
+                            );
+                            return;
+                          }
+
+                          final success = await sheetContext.read<InventoryProvider>().createBatch({
+                            'batchCode': batchCodeController.text.trim(),
+                            'ingredientId': ingredientId,
+                            'quantity': quantity,
+                            'remainingQuantity': remaining,
+                            'manufactureDate': manufactureDateController.text.isEmpty ? null : manufactureDateController.text,
+                            'expiryDate': expiryDateController.text,
+                            'kitchenId': kitchenId,
+                          });
+
+                          if (!sheetContext.mounted) return;
+                          if (success) {
+                            Navigator.pop(sheetContext);
+                            await hostContext.read<InventoryProvider>().loadKitchenInventory(kitchenId: kitchenId);
+                            ScaffoldMessenger.of(hostContext).showSnackBar(
+                              const SnackBar(content: Text('Nhập kho thành công!')),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(sheetContext).showSnackBar(
+                              SnackBar(content: Text(sheetContext.read<InventoryProvider>().errorMessage ?? 'Nhập kho thất bại')),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.inventory_2_outlined),
+                        label: const Text('Lưu nhập kho'),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _MiniStat({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12)),
-            const SizedBox(height: 6),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -872,6 +1157,64 @@ class _BomResultCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool danger;
+
+  const _MenuTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = danger ? Colors.redAccent : AppTheme.primary;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: danger ? Colors.redAccent.withOpacity(0.06) : AppTheme.background,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: danger ? Colors.redAccent.withOpacity(0.15) : AppTheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: color),
+          ],
+        ),
       ),
     );
   }

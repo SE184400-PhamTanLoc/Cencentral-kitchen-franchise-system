@@ -142,6 +142,8 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
     BatchModel? existingBatch,
   }) async {
     final auth = context.read<AuthProvider>();
+    final inventoryProvider = context.read<InventoryProvider>();
+    final messenger = ScaffoldMessenger.of(context);
     final kitchenId = auth.kitchenId ?? 1;
     final isEditMode = existingBatch != null;
     final batchCodeController = TextEditingController(text: existingBatch?.batchCode ?? '');
@@ -178,7 +180,7 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                   firstDate: DateTime.now().subtract(const Duration(days: 3650)),
                   lastDate: DateTime.now().add(const Duration(days: 3650)),
                 );
-                if (selected != null) {
+                if (selected != null && context.mounted) {
                   controller.text = selected.toIso8601String().split('T').first;
                   setState(() {});
                 }
@@ -255,19 +257,19 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                           };
 
                           final success = isEditMode
-                              ? await context.read<InventoryProvider>().updateBatch(existingBatch.batchId, payload)
-                              : await context.read<InventoryProvider>().createBatch(payload);
+                              ? await inventoryProvider.updateBatch(existingBatch.batchId, payload)
+                              : await inventoryProvider.createBatch(payload);
 
                           if (!context.mounted) return;
                           if (success) {
                             Navigator.pop(context);
-                            await context.read<InventoryProvider>().fetchIngredientDetail(ingredient.ingredientId);
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            await inventoryProvider.fetchIngredientDetail(ingredient.ingredientId);
+                            messenger.showSnackBar(
                               SnackBar(content: Text(isEditMode ? 'Cập nhật lô thành công!' : 'Tạo lô thành công!')),
                             );
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(context.read<InventoryProvider>().errorMessage ?? 'Thao tác lô thất bại')),
+                            messenger.showSnackBar(
+                              SnackBar(content: Text(inventoryProvider.errorMessage ?? 'Thao tác lô thất bại')),
                             );
                           }
                         },
@@ -282,12 +284,6 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
         );
       },
     );
-
-    batchCodeController.dispose();
-    quantityController.dispose();
-    remainingController.dispose();
-    manufactureDateController.dispose();
-    expiryDateController.dispose();
   }
 
   Future<void> _confirmDeleteBatch(BuildContext context, BatchModel batch) async {
