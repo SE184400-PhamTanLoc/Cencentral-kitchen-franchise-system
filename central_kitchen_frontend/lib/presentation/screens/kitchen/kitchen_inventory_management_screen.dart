@@ -42,110 +42,113 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
     final batches = provider.filteredBatches;
     final selectedIngredient = _findIngredient(provider.ingredients, _selectedIngredientId);
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Quản lý tồn kho theo bếp'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppTheme.primary,
-        elevation: 0,
-        actions: [
-          IconButton(
-            tooltip: 'Tải lại',
-            onPressed: () => context.read<InventoryProvider>().loadKitchenInventory(kitchenId: auth.kitchenId),
-            icon: const Icon(Icons.refresh_outlined),
-          ),
-        ],
-        bottom: const TabBar(
-          isScrollable: true,
-          labelColor: AppTheme.primary,
-          unselectedLabelColor: AppTheme.onSurfaceVariant,
-          indicatorColor: AppTheme.primary,
-          tabs: [
-            Tab(text: 'Tổng quan', icon: Icon(Icons.dashboard_outlined)),
-            Tab(text: 'Nguyên liệu', icon: Icon(Icons.inventory_2_outlined)),
-            Tab(text: 'Batches', icon: Icon(Icons.view_list_outlined)),
-            Tab(text: 'BOM', icon: Icon(Icons.calculate_outlined)),
-          ],
-        ),
-      ),
-      body: provider.isLoading && provider.ingredients.isEmpty && provider.batches.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              children: [
-                _OverviewTab(
-                  ingredientCount: provider.ingredients.length,
-                  batchCount: provider.batches.length,
-                  lowStockCount: provider.ingredients.where((item) => item.availableQuantity <= item.minStockLevel).length,
-                  expiredBatchCount: provider.batches.where((batch) => batch.isExpired).length,
-                ),
-                _IngredientsTab(
-                  ingredients: ingredients,
-                  searchQuery: provider.searchQuery,
-                  rawFilter: provider.rawFilter,
-                  onSearchChanged: (value) {
-                    provider.setSearchQuery(value);
-                    provider.fetchIngredients(keyword: value);
-                  },
-                  onFilterChanged: (value) {
-                    provider.setRawFilter(value);
-                    provider.fetchIngredients(isRawMaterial: value);
-                  },
-                  onTapIngredient: (ingredient) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: ingredient)),
-                    );
-                  },
-                ),
-                _BatchesTab(
-                  batches: batches,
-                  searchQuery: provider.batchSearchQuery,
-                  statusFilter: provider.batchStatusFilter,
-                  ingredientLookup: {
-                    for (final ingredient in provider.ingredients) ingredient.ingredientId: ingredient,
-                  },
-                  onSearchChanged: provider.setBatchSearchQuery,
-                  onFilterChanged: provider.setBatchStatusFilter,
-                  onTapBatch: (batch) {
-                    final ingredient = provider.ingredients.firstWhere(
-                      (item) => item.ingredientId == batch.ingredientId,
-                      orElse: () => provider.ingredients.isNotEmpty ? provider.ingredients.first : _fallbackIngredient(batch),
-                    );
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: ingredient)),
-                    );
-                  },
-                ),
-                _BomTab(
-                  ingredients: provider.ingredients,
-                  selectedIngredientId: _selectedIngredientId,
-                  selectedIngredient: selectedIngredient,
-                  quantityController: _bomQuantityController,
-                  productionPlan: provider.productionPlan,
-                  onIngredientChanged: (value) => setState(() => _selectedIngredientId = value),
-                  onCalculate: () async {
-                    final ingredientId = _selectedIngredientId;
-                    if (ingredientId == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn nguyên liệu đầu ra.')));
-                      return;
-                    }
-                    final qty = double.tryParse(_bomQuantityController.text) ?? 0;
-                    if (qty <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Số lượng phải lớn hơn 0.')));
-                      return;
-                    }
-                    final success = await provider.buildProductionPlan(ingredientId, qty);
-                    if (!context.mounted) return;
-                    if (!success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(provider.errorMessage ?? 'Không thể tính BOM.')),
-                      );
-                    }
-                  },
-                  onClear: provider.clearProductionPlan,
-                ),
-              ],
+    return DefaultTabController(
+      length: 4,
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          title: const Text('Quản lý tồn kho theo bếp'),
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppTheme.primary,
+          elevation: 0,
+          actions: [
+            IconButton(
+              tooltip: 'Tải lại',
+              onPressed: () => context.read<InventoryProvider>().loadKitchenInventory(kitchenId: auth.kitchenId),
+              icon: const Icon(Icons.refresh_outlined),
             ),
+          ],
+          bottom: const TabBar(
+            isScrollable: true,
+            labelColor: AppTheme.primary,
+            unselectedLabelColor: AppTheme.onSurfaceVariant,
+            indicatorColor: AppTheme.primary,
+            tabs: [
+              Tab(text: 'Tổng quan', icon: Icon(Icons.dashboard_outlined)),
+              Tab(text: 'Nguyên liệu', icon: Icon(Icons.inventory_2_outlined)),
+              Tab(text: 'Batches', icon: Icon(Icons.view_list_outlined)),
+              Tab(text: 'BOM', icon: Icon(Icons.calculate_outlined)),
+            ],
+          ),
+        ),
+        body: provider.isLoading && provider.ingredients.isEmpty && provider.batches.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                children: [
+                  _OverviewTab(
+                    ingredientCount: provider.ingredients.length,
+                    batchCount: provider.batches.length,
+                    lowStockCount: provider.ingredients.where((item) => item.availableQuantity <= item.minStockLevel).length,
+                    expiredBatchCount: provider.batches.where((batch) => batch.isExpired).length,
+                  ),
+                  _IngredientsTab(
+                    ingredients: ingredients,
+                    searchQuery: provider.searchQuery,
+                    rawFilter: provider.rawFilter,
+                    onSearchChanged: (value) {
+                      provider.setSearchQuery(value);
+                      provider.fetchIngredients(keyword: value);
+                    },
+                    onFilterChanged: (value) {
+                      provider.setRawFilter(value);
+                      provider.fetchIngredients(isRawMaterial: value);
+                    },
+                    onTapIngredient: (ingredient) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: ingredient)),
+                      );
+                    },
+                  ),
+                  _BatchesTab(
+                    batches: batches,
+                    searchQuery: provider.batchSearchQuery,
+                    statusFilter: provider.batchStatusFilter,
+                    ingredientLookup: {
+                      for (final ingredient in provider.ingredients) ingredient.ingredientId: ingredient,
+                    },
+                    onSearchChanged: provider.setBatchSearchQuery,
+                    onFilterChanged: provider.setBatchStatusFilter,
+                    onTapBatch: (batch) {
+                      final ingredient = provider.ingredients.firstWhere(
+                        (item) => item.ingredientId == batch.ingredientId,
+                        orElse: () => provider.ingredients.isNotEmpty ? provider.ingredients.first : _fallbackIngredient(batch),
+                      );
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: ingredient)),
+                      );
+                    },
+                  ),
+                  _BomTab(
+                    ingredients: provider.ingredients,
+                    selectedIngredientId: _selectedIngredientId,
+                    selectedIngredient: selectedIngredient,
+                    quantityController: _bomQuantityController,
+                    productionPlan: provider.productionPlan,
+                    onIngredientChanged: (value) => setState(() => _selectedIngredientId = value),
+                    onCalculate: () async {
+                      final ingredientId = _selectedIngredientId;
+                      if (ingredientId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn nguyên liệu đầu ra.')));
+                        return;
+                      }
+                      final qty = double.tryParse(_bomQuantityController.text) ?? 0;
+                      if (qty <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Số lượng phải lớn hơn 0.')));
+                        return;
+                      }
+                      final success = await provider.buildProductionPlan(ingredientId, qty);
+                      if (!context.mounted) return;
+                      if (!success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(provider.errorMessage ?? 'Không thể tính BOM.')),
+                        );
+                      }
+                    },
+                    onClear: provider.clearProductionPlan,
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
