@@ -831,6 +831,8 @@ class _IngredientCard extends StatelessWidget {
                       _Tag(label: ingredient.isRawMaterial ? 'Raw' : 'BFP'),
                       _Tag(label: '${ingredient.availableQuantity.toStringAsFixed(1)} ${ingredient.unit}'),
                       _Tag(label: '${ingredient.batchCount} lô'),
+                      if (ingredient.latestExpiryDate != null)
+                        _Tag(label: 'HSD: ${ingredient.latestExpiryDate!.day.toString().padLeft(2, '0')}/${ingredient.latestExpiryDate!.month.toString().padLeft(2, '0')}/${ingredient.latestExpiryDate!.year}'),
                     ],
                   ),
                 ],
@@ -992,7 +994,7 @@ class _BatchCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Còn lại ${batch.remainingQuantity.toStringAsFixed(2)} / ${batch.quantity.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
-            Text('HSD: ${batch.expiryDate.toIso8601String().split('T').first}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
+            Text('HSD: ${batch.expiryDate.day.toString().padLeft(2, '0')}/${batch.expiryDate.month.toString().padLeft(2, '0')}/${batch.expiryDate.year}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
           ],
         ),
       ),

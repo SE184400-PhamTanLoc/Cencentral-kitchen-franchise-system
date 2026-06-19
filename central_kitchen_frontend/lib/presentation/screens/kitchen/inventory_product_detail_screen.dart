@@ -592,7 +592,7 @@ class _BatchCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text('Số lượng còn lại: $remaining / $total', style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          Text('HSD: ${batch.expiryDate.toIso8601String().split('T').first}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
+          Text('HSD: ${batch.expiryDate.day.toString().padLeft(2, '0')}/${batch.expiryDate.month.toString().padLeft(2, '0')}/${batch.expiryDate.year}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
