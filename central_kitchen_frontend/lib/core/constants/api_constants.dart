@@ -17,4 +17,11 @@ class ApiConstants {
 
   /// Endpoint quản lý Bếp Trung Tâm (Admin)
   static const String adminKitchensUrl = '/api/admin/stores/kitchens';
+
+  /// Endpoint danh mục nguyên liệu
+  static const String ingredientsUrl = '/api/ingredients';
+
+  /// Endpoint batch và production plan
+  static const String kitchenBatchesUrl = '/api/kitchen/batches';
+  static const String kitchenProductionPlanUrl = '/api/kitchen/production-plan';
 }

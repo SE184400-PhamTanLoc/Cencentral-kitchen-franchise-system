@@ -9,14 +9,17 @@ import 'core/navigation/navigator_key.dart';
 // Import các file data
 import 'data/datasources/auth_datasource.dart';
 import 'data/datasources/admin_datasource.dart';
+import 'data/datasources/inventory_datasource.dart';
 
 // Import các file business
 import 'business/providers/auth_provider.dart';
 import 'business/providers/admin_provider.dart';
+import 'business/providers/inventory_provider.dart';
 
 // Import các file presentation
 import 'presentation/screens/shared/login_screen.dart';
 import 'presentation/screens/admin/admin_dashboard_screen.dart';
+import 'presentation/screens/kitchen/kitchen_dashboard_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,6 +45,9 @@ class MyApp extends StatelessWidget {
         ProxyProvider<ApiClient, AdminDatasource>(
           update: (_, apiClient, _) => AdminDatasource(apiClient),
         ),
+        ProxyProvider<ApiClient, InventoryDatasource>(
+          update: (_, apiClient, _) => InventoryDatasource(apiClient),
+        ),
         
         // 3. Tạo các Providers quản lý State, phụ thuộc vào các Datasources tương ứng
         ChangeNotifierProxyProvider<AuthDatasource, AuthProvider>(
@@ -53,6 +59,11 @@ class MyApp extends StatelessWidget {
           create: (context) => AdminProvider(context.read<AdminDatasource>()),
           update: (_, adminDatasource, previous) =>
               previous ?? AdminProvider(adminDatasource),
+        ),
+        ChangeNotifierProxyProvider<InventoryDatasource, InventoryProvider>(
+          create: (context) => InventoryProvider(context.read<InventoryDatasource>()),
+          update: (_, inventoryDatasource, previous) =>
+              previous ?? InventoryProvider(inventoryDatasource),
         ),
       ],
       child: MaterialApp(
@@ -68,7 +79,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginScreen(),
           '/admin': (context) => const AdminDashboardScreen(),
-          '/kitchen': (context) => const PlaceholderDashboard(title: 'Kitchen Dashboard (Bếp Trung Tâm)'),
+          '/kitchen': (context) => const KitchenDashboardScreen(),
           '/franchise': (context) => const PlaceholderDashboard(title: 'Franchise Dashboard (Cửa Hàng Nhượng Quyền)'),
         },
       ),
@@ -126,7 +137,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           if (role == 'ADMIN') {
             return const AdminDashboardScreen();
           } else if (role == 'KITCHEN_STAFF') {
-            return const PlaceholderDashboard(title: 'Kitchen Dashboard (Bếp Trung Tâm)');
+            return const KitchenDashboardScreen();
           } else {
             return const PlaceholderDashboard(title: 'Franchise Dashboard (Cửa Hàng Nhượng Quyền)');
           }

@@ -24,6 +24,7 @@ public static class DatabaseSeeder
                 logger.LogInformation("Seeding default roles...");
                 context.Roles.AddRange(
                     new Role { RoleCode = "ADMIN", RoleName = "Quản trị viên hệ thống" },
+                    new Role { RoleCode = "MANAGER", RoleName = "Quản lý chuỗi" },
                     new Role { RoleCode = "FRANCHISE_STAFF", RoleName = "Nhân viên cửa hàng nhượng quyền" },
                     new Role { RoleCode = "KITCHEN_STAFF", RoleName = "Nhân viên bếp trung tâm" },
                     new Role { RoleCode = "SUPPLY_COORDINATOR", RoleName = "Điều phối viên cung ứng" }

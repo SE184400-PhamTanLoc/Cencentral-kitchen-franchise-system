@@ -25,6 +25,8 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get userRole => _currentUser?.roleCode; // Lấy Vai trò (ADMIN, KITCHEN_STAFF...)
+  int? get kitchenId => _currentUser?.kitchenId;
+  int? get storeId => _currentUser?.storeId;
 
   // --- CÁC PHƯƠNG THỨC XỬ LÝ NGHIỆP VỤ ---
 

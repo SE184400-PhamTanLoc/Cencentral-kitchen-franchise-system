@@ -50,7 +50,9 @@ public class AuthService : IAuthService
             Username = user.Username,
             FullName = user.FullName,
             RoleCode = user.Role.RoleCode,
-            RoleName = user.Role.RoleName
+            RoleName = user.Role.RoleName,
+            KitchenId = user.KitchenId,
+            StoreId = user.StoreId
         };
     }
 
