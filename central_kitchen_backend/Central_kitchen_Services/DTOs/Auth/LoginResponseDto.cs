@@ -9,4 +9,6 @@ public class LoginResponseDto
     public string FullName { get; set; } = null!;
     public string RoleCode { get; set; } = null!;
     public string RoleName { get; set; } = null!;
+    public int? KitchenId { get; set; }
+    public int? StoreId { get; set; }
 }
