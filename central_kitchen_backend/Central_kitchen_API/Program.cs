@@ -3,6 +3,7 @@ using System.Text;
 using Central_kitchen_Repositories.Data;
 using Central_kitchen_Repositories.Interfaces;
 using Central_kitchen_Repositories.Repositories;
+using Central_kitchen_Services.DTOs.Inventory;
 using Central_kitchen_Services.Interfaces;
 using Central_kitchen_Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,12 +26,16 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IStoreRepository, StoreRepository>();
 builder.Services.AddScoped<ICentralKitchenRepository, CentralKitchenRepository>();
+builder.Services.AddScoped<IIngredientRepository, IngredientRepository>();
+builder.Services.AddScoped<IBatchRepository, BatchRepository>();
+builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<ICentralKitchenService, CentralKitchenService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 // ==================== JWT AUTHENTICATION ====================
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
