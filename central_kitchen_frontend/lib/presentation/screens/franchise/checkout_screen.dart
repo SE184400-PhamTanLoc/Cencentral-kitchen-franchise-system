@@ -539,7 +539,7 @@ class _CostRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = value == 0
         ? 'Miễn phí'
-        : '${_formatCurrency(value)}';
+        : _formatCurrency(value);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

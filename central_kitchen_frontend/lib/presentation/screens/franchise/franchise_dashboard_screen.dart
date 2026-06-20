@@ -7,7 +7,6 @@ import '../../../business/providers/notification_provider.dart';
 import '../../../core/constants/app_theme.dart';
 import '../../../data/models/order_model.dart';
 import 'cart_screen.dart';
-import 'checkout_screen.dart';
 import 'notification_screen.dart';
 
 /// Dashboard chính cho Franchise Store Staff.
@@ -481,7 +480,7 @@ class _IngredientCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _fmt(unitPrice) + ' / $unit',
+                  '${_fmt(unitPrice)} / $unit',
                   style: const TextStyle(
                       fontSize: 12, color: AppTheme.secondary),
                 ),
@@ -645,7 +644,7 @@ class _HistoryTab extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: cart.orders.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (ctx, i) => _OrderCard(order: cart.orders[i]),
       ),
     );
@@ -804,7 +803,7 @@ class _InventoryTab extends StatelessWidget {
               : ListView.separated(
                   padding: const EdgeInsets.all(12),
                   itemCount: cart.storeInventory.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  separatorBuilder: (_, _) => const SizedBox(height: 6),
                   itemBuilder: (ctx, i) {
                     final inv = cart.storeInventory[i];
                     return Container(

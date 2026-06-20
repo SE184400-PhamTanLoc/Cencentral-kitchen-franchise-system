@@ -131,7 +131,7 @@ class CartScreen extends StatelessWidget {
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: cart.cartItems.length,
-            separatorBuilder: (_, __) => const Divider(
+            separatorBuilder: (_, _) => const Divider(
               height: 1,
               indent: 72,
               color: AppTheme.outlineVariant,
