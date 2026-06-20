@@ -10,16 +10,21 @@ import 'core/navigation/navigator_key.dart';
 import 'data/datasources/auth_datasource.dart';
 import 'data/datasources/admin_datasource.dart';
 import 'data/datasources/inventory_datasource.dart';
+import 'data/datasources/order_datasource.dart';
+import 'data/datasources/notification_datasource.dart';
 
 // Import các file business
 import 'business/providers/auth_provider.dart';
 import 'business/providers/admin_provider.dart';
 import 'business/providers/inventory_provider.dart';
+import 'business/providers/cart_order_provider.dart';
+import 'business/providers/notification_provider.dart';
 
 // Import các file presentation
 import 'presentation/screens/shared/login_screen.dart';
 import 'presentation/screens/admin/admin_dashboard_screen.dart';
 import 'presentation/screens/kitchen/kitchen_dashboard_screen.dart';
+import 'presentation/screens/franchise/franchise_dashboard_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -48,6 +53,12 @@ class MyApp extends StatelessWidget {
         ProxyProvider<ApiClient, InventoryDatasource>(
           update: (_, apiClient, _) => InventoryDatasource(apiClient),
         ),
+        ProxyProvider<ApiClient, OrderDatasource>(
+          update: (_, apiClient, _) => OrderDatasource(apiClient),
+        ),
+        ProxyProvider<ApiClient, NotificationDatasource>(
+          update: (_, apiClient, _) => NotificationDatasource(apiClient),
+        ),
         
         // 3. Tạo các Providers quản lý State, phụ thuộc vào các Datasources tương ứng
         ChangeNotifierProxyProvider<AuthDatasource, AuthProvider>(
@@ -65,6 +76,17 @@ class MyApp extends StatelessWidget {
           update: (_, inventoryDatasource, previous) =>
               previous ?? InventoryProvider(inventoryDatasource),
         ),
+        ChangeNotifierProxyProvider<OrderDatasource, CartOrderProvider>(
+          create: (context) => CartOrderProvider(context.read<OrderDatasource>()),
+          update: (_, orderDatasource, previous) =>
+              previous ?? CartOrderProvider(orderDatasource),
+        ),
+        ChangeNotifierProxyProvider<NotificationDatasource, NotificationProvider>(
+          create: (context) =>
+              NotificationProvider(context.read<NotificationDatasource>()),
+          update: (_, notifDatasource, previous) =>
+              previous ?? NotificationProvider(notifDatasource),
+        ),
       ],
       child: MaterialApp(
         title: 'Central Kitchen Pro',
@@ -80,7 +102,7 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/admin': (context) => const AdminDashboardScreen(),
           '/kitchen': (context) => const KitchenDashboardScreen(),
-          '/franchise': (context) => const PlaceholderDashboard(title: 'Franchise Dashboard (Cửa Hàng Nhượng Quyền)'),
+          '/franchise': (context) => const FranchiseDashboardScreen(),
         },
       ),
     );
@@ -139,7 +161,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
           } else if (role == 'KITCHEN_STAFF') {
             return const KitchenDashboardScreen();
           } else {
-            return const PlaceholderDashboard(title: 'Franchise Dashboard (Cửa Hàng Nhượng Quyền)');
+            // FRANCHISE_STAFF, MANAGER → vào FranchiseDashboard
+            return const FranchiseDashboardScreen();
           }
         } else {
           // Chưa đăng nhập -> Vào màn hình Đăng nhập

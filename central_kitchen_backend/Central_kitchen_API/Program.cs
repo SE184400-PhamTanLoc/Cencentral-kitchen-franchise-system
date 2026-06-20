@@ -4,6 +4,7 @@ using Central_kitchen_Repositories.Data;
 using Central_kitchen_Repositories.Interfaces;
 using Central_kitchen_Repositories.Repositories;
 using Central_kitchen_Services.DTOs.Inventory;
+using Central_kitchen_Services.DTOs.Order;
 using Central_kitchen_Services.Interfaces;
 using Central_kitchen_Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -30,6 +31,7 @@ builder.Services.AddScoped<IIngredientRepository, IngredientRepository>();
 builder.Services.AddScoped<IBatchRepository, BatchRepository>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -37,6 +39,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<ICentralKitchenService, CentralKitchenService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 // ==================== JWT AUTHENTICATION ====================
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -130,8 +134,10 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Central Kitchen API v1");
     });
 }
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors("AllowFlutterApp");
 

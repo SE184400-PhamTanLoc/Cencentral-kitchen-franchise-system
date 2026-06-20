@@ -31,8 +31,14 @@ class KitchenModel {
   ///   );
   /// }
   factory KitchenModel.fromJson(Map<String, dynamic> json) {
-    // Để trống cho bạn tự viết theo gợi ý ở trên
-    throw UnimplementedError('Bạn hãy hoàn thành hàm từ JSON cho KitchenModel nhé!');
+    return KitchenModel(
+      kitchenId: json['kitchenId'] ?? 0,
+      kitchenName: json['kitchenName'] ?? '',
+      address: json['address'] ?? '',
+      phoneNumber: json['phoneNumber'],
+      isActive: json['isActive'] ?? true,
+      staffCount: json['staffCount'] ?? 0,
+    );
   }
 
   /// Chuyển đổi đối tượng thành dữ liệu JSON làm payload truyền đi.
@@ -47,7 +53,11 @@ class KitchenModel {
   ///   };
   /// }
   Map<String, dynamic> toJson() {
-    // Để trống cho bạn tự viết theo gợi ý ở trên
-    return {};
+    return {
+      'kitchenName': kitchenName,
+      'address': address,
+      'phoneNumber': phoneNumber,
+      'isActive': isActive,
+    };
   }
 }

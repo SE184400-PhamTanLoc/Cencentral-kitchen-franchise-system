@@ -52,7 +52,9 @@ public class AuthService : IAuthService
             RoleCode = user.Role.RoleCode,
             RoleName = user.Role.RoleName,
             KitchenId = user.KitchenId,
-            StoreId = user.StoreId
+            KitchenName = user.Kitchen?.KitchenName,
+            StoreId = user.StoreId,
+            StoreName = user.Store?.StoreName
         };
     }
 
