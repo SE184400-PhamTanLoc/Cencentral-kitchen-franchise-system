@@ -55,8 +55,22 @@ class UserModel {
   ///   );
   /// }
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    // Để trống cho bạn tự viết theo gợi ý ở trên
-    throw UnimplementedError('Bạn hãy hoàn thành hàm từ JSON cho UserModel nhé!');
+    return UserModel(
+      userId: json['userId'] ?? 0,
+      username: json['username'] ?? '',
+      fullName: json['fullName'] ?? '',
+      email: json['email'],
+      phoneNumber: json['phoneNumber'],
+      roleId: json['roleId'] ?? 0,
+      roleCode: json['roleCode'] ?? '',
+      roleName: json['roleName'] ?? '',
+      kitchenId: json['kitchenId'],
+      kitchenName: json['kitchenName'],
+      storeId: json['storeId'],
+      storeName: json['storeName'],
+      isActive: json['isActive'] ?? true,
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+    );
   }
 
   /// Hàm chuyển đổi đối tượng sang định dạng JSON gửi lên API khi Tạo/Cập nhật.
@@ -75,7 +89,14 @@ class UserModel {
   ///   };
   /// }
   Map<String, dynamic> toJson() {
-    // Để trống cho bạn tự viết theo gợi ý ở trên
-    return {};
+    return {
+      'fullName': fullName,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'roleId': roleId,
+      'kitchenId': kitchenId,
+      'storeId': storeId,
+      'isActive': isActive,
+    };
   }
 }

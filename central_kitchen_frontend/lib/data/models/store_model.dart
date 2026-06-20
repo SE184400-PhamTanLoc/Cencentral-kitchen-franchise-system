@@ -37,8 +37,16 @@ class StoreModel {
   ///   );
   /// }
   factory StoreModel.fromJson(Map<String, dynamic> json) {
-    // Để trống cho bạn tự viết theo gợi ý ở trên
-    throw UnimplementedError('Bạn hãy hoàn thành hàm từ JSON cho StoreModel nhé!');
+    return StoreModel(
+      storeId: json['storeId'] ?? 0,
+      storeName: json['storeName'] ?? '',
+      address: json['address'] ?? '',
+      phoneNumber: json['phoneNumber'],
+      creditLimit: json['creditLimit'] != null ? (json['creditLimit'] as num).toDouble() : null,
+      currentDebt: json['currentDebt'] != null ? (json['currentDebt'] as num).toDouble() : null,
+      isActive: json['isActive'] ?? true,
+      staffCount: json['staffCount'] ?? 0,
+    );
   }
 
   /// Chuyển đổi đối tượng thành dữ liệu JSON làm payload truyền đi.
@@ -54,7 +62,12 @@ class StoreModel {
   ///   };
   /// }
   Map<String, dynamic> toJson() {
-    // Để trống cho bạn tự viết theo gợi ý ở trên
-    return {};
+    return {
+      'storeName': storeName,
+      'address': address,
+      'phoneNumber': phoneNumber,
+      'creditLimit': creditLimit,
+      'isActive': isActive,
+    };
   }
 }

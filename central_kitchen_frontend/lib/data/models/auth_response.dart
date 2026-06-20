@@ -9,7 +9,9 @@ class AuthResponse {
   final String roleCode;
   final String roleName;
   final int? kitchenId;
+  final String? kitchenName;
   final int? storeId;
+  final String? storeName;
 
   AuthResponse({
     required this.token,
@@ -20,7 +22,9 @@ class AuthResponse {
     required this.roleCode,
     required this.roleName,
     this.kitchenId,
+    this.kitchenName,
     this.storeId,
+    this.storeName,
   });
 
   /// Hàm khởi tạo Factory để chuyển đổi dữ liệu từ Map JSON (nhận từ API) thành Object Dart.
@@ -34,7 +38,9 @@ class AuthResponse {
       roleCode: json['roleCode'] ?? json['RoleCode'] ?? '',
       roleName: json['roleName'] ?? json['RoleName'] ?? '',
       kitchenId: json['kitchenId'] ?? json['KitchenId'],
+      kitchenName: json['kitchenName'] ?? json['KitchenName'],
       storeId: json['storeId'] ?? json['StoreId'],
+      storeName: json['storeName'] ?? json['StoreName'],
     );
   }
 
@@ -49,7 +55,9 @@ class AuthResponse {
       'roleCode': roleCode,
       'roleName': roleName,
       'kitchenId': kitchenId,
+      'kitchenName': kitchenName,
       'storeId': storeId,
+      'storeName': storeName,
     };
   }
 }

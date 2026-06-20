@@ -10,7 +10,7 @@ class AdminProvider with ChangeNotifier {
   final AdminDatasource _adminDatasource;
 
   // --- TRẠNG THÁI (State Variables) ---
-  final List<UserModel> _users = [];
+  List<UserModel> _users = [];
   List<StoreModel> _stores = [];
   List<KitchenModel> _kitchens = [];
   bool _isLoading = false;
@@ -45,8 +45,18 @@ class AdminProvider with ChangeNotifier {
   ///   }
   /// }
   Future<void> fetchUsers() async {
-    // Để trống cho bạn tự viết theo hướng dẫn trên
-    throw UnimplementedError();
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      _users = await _adminDatasource.getUsers();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Không thể tải danh sách tài khoản.';
+      notifyListeners();
+    }
   }
 
   /// Thêm tài khoản mới.
