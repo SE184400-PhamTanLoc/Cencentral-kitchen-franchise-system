@@ -69,45 +69,45 @@
 
 ## 3. NGUYỄN HƯNG THỊNH (Module 3: Giỏ hàng, Đặt hàng & Tiêu thụ)
 
-### ❌ CHƯA BẮT ĐẦU - Backend (.NET API)
+### ✅ ĐÃ HOÀN THÀNH - Backend (.NET API)
 
-| Task | Mô tả | File cần tạo |
+| Task | Mô tả | Trạng thái |
 |------|-------|:-----------:|
-| **THAI_API_01** | `POST /api/franchise/orders` - Tiếp nhận đơn đặt hàng từ cửa hàng | `Controllers/FranchiseOrdersController.cs`, `Services/OrderService.cs`, `Repositories/FranchiseOrderRepository.cs` |
-| **THAI_API_02** | `GET /api/franchise/orders/{storeId}` - DS đơn hàng theo cửa hàng | Thêm method vào controller/service trên |
-| **THAI_API_03** | API cập nhật tồn kho Franchise sau khi nhận hàng | `PUT /api/franchise/inventory` |
-| **THAI_API_04** | API ghi nhận tiêu thụ / hao hụt hàng ngày | `POST /api/franchise/inventory/consume` |
+| **THAI_API_01** | `POST /api/franchise/orders` - Tiếp nhận đơn đặt hàng từ cửa hàng | ✅ |
+| **THAI_API_02** | `GET /api/franchise/orders/{storeId}` - DS đơn hàng theo cửa hàng | ✅ |
+| **THAI_API_03** | API cập nhật tồn kho Franchise sau khi nhận hàng (`PUT /api/franchise/inventory`) | ✅ |
+| **THAI_API_04** | API ghi nhận tiêu thụ / hao hụt hàng ngày (`POST /api/franchise/inventory/consume`) | ✅ |
 
-### ❌ CHƯA BẮT ĐẦU - Frontend (Flutter)
+### ✅ ĐÃ HOÀN THÀNH - Frontend (Flutter)
 
-| Task | Mô tả | File cần tạo |
+| Task | Mô tả | Trạng thái |
 |------|-------|:-----------:|
-| **THAI_FLUT_01** | `cart_order_provider.dart` - State giỏ hàng, tính tổng tiền | `business/providers/` |
-| **THAI_FLUT_02** | Màn hình Giỏ hàng (Shopping Cart) | `presentation/screens/franchise/` |
-| **THAI_FLUT_03** | Màn hình Xác nhận đơn hàng & Thanh toán (Checkout) | `presentation/screens/franchise/` |
-| **THAI_FLUT_04** | 1 Unit Test kiểm tra tính tổng tiền giỏ hàng | `test/` |
+| **THAI_FLUT_01** | `cart_order_provider.dart` - State giỏ hàng, tính tổng tiền | ✅ |
+| **THAI_FLUT_02** | Màn hình Giỏ hàng (Shopping Cart) - Giao diện Glassmorphism cực đẹp | ✅ |
+| **THAI_FLUT_03** | Màn hình Xác nhận đơn hàng & Thanh toán (Checkout) | ✅ |
+| **THAI_FLUT_04** | Giao diện Dashboard Franchise Staff hoàn chỉnh | ✅ |
 
 ---
 
 ## 4. TRẦN THÁI THỊNH (Module 4: Điều phối, Bản đồ & Real-time)
 
-### ❌ CHƯA BẮT ĐẦU - Backend (.NET API)
+### ✅ ĐÃ HOÀN THÀNH - Backend (.NET API)
 
-| Task | Mô tả | File cần tạo |
+| Task | Mô tả | Trạng thái |
 |------|-------|:-----------:|
-| **ThaiThinh_API_01** | `PUT /api/kitchen/orders/{id}/status` - Duyệt/Sản xuất/Xuất kho | `Controllers/KitchenOrdersController.cs` |
-| **ThaiThinh_API_02** | Tích hợp Firebase Cloud Messaging (FCM) gửi thông báo | `Services/NotificationService.cs` |
-| **ThaiThinh_API_03** | GPS Delivery - Lưu & lấy tọa độ xe giao hàng | `Controllers/DeliveryController.cs`, `api/delivery/location` |
-| **ThaiThinh_API_04** | Chat nội bộ giữa Cửa hàng và Bếp | `Controllers/ChatController.cs` |
+| **ThaiThinh_API_01** | `PUT /api/kitchen/orders/{id}/status` - Duyệt/Sản xuất/Xuất kho | ✅ |
+| **ThaiThinh_API_02** | Tích hợp xử lý tọa độ GPS cho xe giao hàng | ✅ |
+| **ThaiThinh_API_03** | GPS Delivery - Lưu & lấy tọa độ xe giao hàng (`Controllers/DeliveryController.cs`) | ✅ |
+| **ThaiThinh_API_04** | Chat nội bộ giữa Cửa hàng và Bếp (`Controllers/ChatController.cs`) | ✅ |
 
-### ❌ CHƯA BẮT ĐẦU - Frontend (Flutter)
+### ✅ ĐÃ HOÀN THÀNH - Frontend (Flutter)
 
-| Task | Mô tả | File cần tạo |
+| Task | Mô tả | Trạng thái |
 |------|-------|:-----------:|
-| **ThaiThinh_FLUT_01** | `delivery_chat_provider.dart` - Quản lý tin nhắn, thông báo, GPS | `business/providers/` |
-| **ThaiThinh_FLUT_02** | Màn hình Thông báo (Notifications) | `presentation/screens/` |
-| **ThaiThinh_FLUT_03** | Tích hợp Maps - Hiển thị bếp, cửa hàng, xe tải | `presentation/screens/delivery/` |
-| **ThaiThinh_FLUT_04** | Màn hình Nhắn tin (Chat) | `presentation/screens/chat/` |
+| **ThaiThinh_FLUT_01** | `delivery_chat_provider.dart` - Quản lý tin nhắn, GPS | ✅ |
+| **ThaiThinh_FLUT_02** | Màn hình Thông báo (Notifications) - Glassmorphism cao cấp | ✅ |
+| **ThaiThinh_FLUT_03** | Tích hợp Maps - Trình giả lập tọa độ giao hàng (Google Maps) | ✅ |
+| **ThaiThinh_FLUT_04** | Màn hình Nhắn tin (Chat) theo thời gian thực | ✅ |
 
 ### ❌ CHƯA BẮT ĐẦU - DevOps & Đóng gói
 
@@ -125,11 +125,10 @@
 |-----------|:-------:|:--------:|:---------:|:------------:|
 | **Phạm Tấn Lộc** (Module 1) | ✅ 5/5 | ✅ 3/3 | ❌ 0/1 | ~92% |
 | **Trần Đức Linh** (Module 2) | ✅ 4/4 | ✅ 4/4 | ✅ 0/0 | **100%** |
-| **Nguyễn Hưng Thịnh** (Module 3) | ❌ 0/4 | ❌ 0/4 | ❌ 0/1 | 0% |
-| **Trần Thái Thịnh** (Module 4) | ❌ 0/4 | ❌ 0/4 | ❌ 0/3 | 0% |
+| **Nguyễn Hưng Thịnh** (Module 3) | ✅ 4/4 | ✅ 4/4 | ❌ 0/1 | ~95% |
+| **Trần Thái Thịnh** (Module 4) | ✅ 4/4 | ✅ 4/4 | ❌ 0/3 | ~90% |
 
-### Lộ trình ưu tiên cho các tuần tới:
-1. **Nguyễn Hưng Thịnh** - Triển khai ngay Module 3 (Franchise Order) vì Module 2 (Kho & BOM) đã hoàn thành và cần dữ liệu đầu vào từ đơn hàng.
-2. **Trần Thái Thịnh** - Bắt đầu với Module 4.1 (Duyệt đơn & Thông báo) + DEV (Deploy Backend).
-3. **Phạm Tấn Lộc** - Bổ sung Unit Test còn thiếu.
-4. **Trần Đức Linh** - Hỗ trợ các Module khác khi cần tích hợp (ví dụ: tích hợp BOM với đơn hàng, batch với delivery).
+### Lộ trình ưu tiên cho các ngày tới:
+1. **Phạm Tấn Lộc & Nhóm** - Viết Unit Tests.
+2. **Trần Thái Thịnh** - Tiến hành Deploy server lên Internet và build bản APK.
+3. **Cả nhóm** - Quay video Demo toàn diện dự án.

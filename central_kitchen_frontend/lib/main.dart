@@ -12,6 +12,7 @@ import 'data/datasources/admin_datasource.dart';
 import 'data/datasources/inventory_datasource.dart';
 import 'data/datasources/order_datasource.dart';
 import 'data/datasources/notification_datasource.dart';
+import 'data/datasources/delivery_chat_datasource.dart';
 
 // Import các file business
 import 'business/providers/auth_provider.dart';
@@ -19,12 +20,16 @@ import 'business/providers/admin_provider.dart';
 import 'business/providers/inventory_provider.dart';
 import 'business/providers/cart_order_provider.dart';
 import 'business/providers/notification_provider.dart';
+import 'business/providers/delivery_chat_provider.dart';
 
 // Import các file presentation
 import 'presentation/screens/shared/login_screen.dart';
 import 'presentation/screens/admin/admin_dashboard_screen.dart';
 import 'presentation/screens/kitchen/kitchen_dashboard_screen.dart';
 import 'presentation/screens/franchise/franchise_dashboard_screen.dart';
+import 'presentation/screens/shared/map_screen.dart';
+import 'presentation/screens/shared/chat_screen.dart';
+import 'presentation/screens/coordinator/coordinator_dashboard_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -59,6 +64,9 @@ class MyApp extends StatelessWidget {
         ProxyProvider<ApiClient, NotificationDatasource>(
           update: (_, apiClient, _) => NotificationDatasource(apiClient),
         ),
+        ProxyProvider<ApiClient, DeliveryChatDatasource>(
+          update: (_, apiClient, _) => DeliveryChatDatasource(apiClient),
+        ),
         
         // 3. Tạo các Providers quản lý State, phụ thuộc vào các Datasources tương ứng
         ChangeNotifierProxyProvider<AuthDatasource, AuthProvider>(
@@ -87,6 +95,12 @@ class MyApp extends StatelessWidget {
           update: (_, notifDatasource, previous) =>
               previous ?? NotificationProvider(notifDatasource),
         ),
+        ChangeNotifierProxyProvider<DeliveryChatDatasource, DeliveryChatProvider>(
+          create: (context) =>
+              DeliveryChatProvider(context.read<DeliveryChatDatasource>()),
+          update: (_, deliveryChatDatasource, previous) =>
+              previous ?? DeliveryChatProvider(deliveryChatDatasource),
+        ),
       ],
       child: MaterialApp(
         title: 'Central Kitchen Pro',
@@ -103,6 +117,9 @@ class MyApp extends StatelessWidget {
           '/admin': (context) => const AdminDashboardScreen(),
           '/kitchen': (context) => const KitchenDashboardScreen(),
           '/franchise': (context) => const FranchiseDashboardScreen(),
+          '/map': (context) => const MapScreen(),
+          '/chat': (context) => const ChatScreen(),
+          '/coordinator': (context) => const CoordinatorDashboardScreen(),
         },
       ),
     );
@@ -160,6 +177,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
             return const AdminDashboardScreen();
           } else if (role == 'KITCHEN_STAFF') {
             return const KitchenDashboardScreen();
+          } else if (role == 'SUPPLY_COORDINATOR') {
+            return const CoordinatorDashboardScreen();
           } else {
             // FRANCHISE_STAFF, MANAGER → vào FranchiseDashboard
             return const FranchiseDashboardScreen();

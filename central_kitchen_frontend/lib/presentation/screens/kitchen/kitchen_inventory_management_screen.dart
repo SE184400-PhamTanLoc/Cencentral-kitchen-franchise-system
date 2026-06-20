@@ -73,6 +73,26 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
                 ),
                 const SizedBox(height: 8),
                 _MenuTile(
+                  icon: Icons.chat_bubble_outline,
+                  title: 'Nhắn tin nội bộ',
+                  subtitle: 'Trao đổi với các cửa hàng',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    Navigator.of(context).pushNamed('/chat');
+                  },
+                ),
+                const SizedBox(height: 10),
+                _MenuTile(
+                  icon: Icons.local_shipping_outlined,
+                  title: 'Bản đồ & Định vị',
+                  subtitle: 'Giám sát xe giao hàng',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    Navigator.of(context).pushNamed('/map');
+                  },
+                ),
+                const SizedBox(height: 10),
+                _MenuTile(
                   icon: Icons.badge_outlined,
                   title: 'Trang cá nhân',
                   subtitle: 'Xem thông tin tài khoản hiện tại',

@@ -32,6 +32,8 @@ builder.Services.AddScoped<IBatchRepository, BatchRepository>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IDeliveryLogRepository, DeliveryLogRepository>();
+builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -41,6 +43,8 @@ builder.Services.AddScoped<ICentralKitchenService, CentralKitchenService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 // ==================== JWT AUTHENTICATION ====================
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
