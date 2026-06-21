@@ -42,3 +42,33 @@ Tất cả các agent làm việc trong dự án này bắt buộc phải đọc
 
 ---
 *(Hãy cập nhật tiếp bên trên dòng này)*
+
+### 📅 [22/06/2026] - Hoàn thiện chức năng Bếp Trung Tâm (Kitchen Staff)
+- **Người thực hiện:** Antigravity (AI Agent)
+- **Công việc đã làm:**
+  - Phát triển tính năng Thực thi Sản xuất (Execute Production) cho Bếp Trung Tâm, sử dụng thuật toán FIFO để tự động trừ nguyên liệu thô theo hạn sử dụng và tạo Batch thành phẩm mới.
+  - Phát triển tính năng Xuất Kho Giao Hàng (Dispatch Order) cho các đơn hàng ở trạng thái APPROVED. Tự động trừ tồn kho theo FIFO và chuyển trạng thái đơn sang DELIVERING, kèm gửi thông báo FCM.
+  - Tích hợp API vào giao diện `KitchenInventoryManagementScreen` trên Frontend (thêm nút Thực thi sản xuất và Xuất kho).
+  - Cập nhật backend (`InventoryService`, `OrderService`, các Controllers) và frontend (`inventory_datasource`, `inventory_provider`).
+  - Gộp 2 file `TASK_PROGRESS_SUMMARY.md` và `PRM393 - Project Assigment.md` thành một.
+- **File đã chỉnh sửa chính:**
+  - `central_kitchen_backend/Central_kitchen_Services/Services/InventoryService.cs`
+  - `central_kitchen_backend/Central_kitchen_Services/Services/OrderService.cs`
+  - `central_kitchen_frontend/lib/presentation/screens/kitchen/kitchen_inventory_management_screen.dart`
+  - `central_kitchen_frontend/lib/business/providers/inventory_provider.dart`
+  - `docs/TASK_PROGRESS_SUMMARY.md`
+- **Ghi chú/Vấn đề cần lưu ý cho Agent tiếp theo:**
+  - Các luồng tính toán FIFO trừ kho phức tạp đã hoạt động tốt. Cần kiểm thử End-to-End trên thiết bị thực hoặc Emulator.
+  - Chuẩn bị bước vào quá trình viết Unit Tests và Deploy.
+
+
+
+### 📅 [21/06/2026] - Dọn dẹp cấu trúc thư mục tài liệu (Docs)
+- **Người thực hiện:** Antigravity (AI Agent)
+- **Công việc đã làm:**
+  - Gom các file tài liệu Markdown rải rác (`AGENT_HANDOVER_LOG.md`, `DESIGN.md`, `TASK_PROGRESS_SUMMARY.md`) vào thư mục `docs/`.
+  - Tạo file `docs/functional_requirements.md` chi tiết hóa danh sách chức năng từ tài liệu đặc tả theo vai trò.
+- **File đã chỉnh sửa chính:**
+  - `docs/functional_requirements.md` (Mới)
+- **Ghi chú/Vấn đề cần lưu ý cho Agent tiếp theo:**
+  - Mọi tài liệu dự án (documents) hãy lưu tập trung trong thư mục `docs/` để codebase gọn gàng hơn.

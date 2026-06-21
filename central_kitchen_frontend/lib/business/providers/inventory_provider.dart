@@ -274,4 +274,41 @@ class InventoryProvider with ChangeNotifier {
     _autoProductionPlan = null;
     notifyListeners();
   }
+
+  Future<bool> executeProduction(Map<String, dynamic> payload) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final newBatch = await _inventoryDatasource.executeProduction(payload);
+      _batches.insert(0, newBatch);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Thực thi sản xuất thất bại. Vui lòng kiểm tra lại số lượng tồn kho nguyên liệu thô.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> dispatchOrder(int orderId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _inventoryDatasource.dispatchOrder(orderId);
+      // Remove the order from the pending/approved list locally
+      _pendingOrders.removeWhere((order) => order.orderId == orderId);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Xuất kho thất bại. Vui lòng kiểm tra lại tồn kho Bếp Trung Tâm.';
+      notifyListeners();
+      return false;
+    }
+  }
 }

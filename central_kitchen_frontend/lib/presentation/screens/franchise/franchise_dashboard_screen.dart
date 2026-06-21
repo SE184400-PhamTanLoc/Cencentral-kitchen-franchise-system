@@ -85,22 +85,28 @@ class _FranchiseDashboardScreenState extends State<FranchiseDashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        auth.currentUser?.fullName ?? 'Nhân viên Cửa hàng',
-                        style: const TextStyle(
-                          color: AppTheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          auth.currentUser?.fullName ?? 'Nhân viên Cửa hàng',
+                          style: const TextStyle(
+                            color: AppTheme.onSurface,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Text(
-                        auth.currentUser?.storeName ?? 'Cửa hàng nhượng quyền',
-                        style: TextStyle(color: AppTheme.onSurfaceVariant.withOpacity(0.7), fontSize: 11, fontWeight: FontWeight.w500),
-                      ),
-                    ],
+                        Text(
+                          auth.currentUser?.storeName ?? 'Cửa hàng nhượng quyền',
+                          style: TextStyle(color: AppTheme.onSurfaceVariant.withOpacity(0.7), fontSize: 11, fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

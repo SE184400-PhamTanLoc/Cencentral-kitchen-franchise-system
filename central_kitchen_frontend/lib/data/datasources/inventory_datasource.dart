@@ -1,4 +1,5 @@
 import '../../core/constants/inventory_endpoints.dart';
+import '../../core/constants/franchise_endpoints.dart';
 import '../../core/network/api_client.dart';
 import '../models/batch_model.dart';
 import '../models/ingredient_model.dart';
@@ -73,5 +74,14 @@ class InventoryDatasource {
       queryParameters: {'kitchenId': kitchenId},
     );
     return ProductionPlanModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+  }
+
+  Future<BatchModel> executeProduction(Map<String, dynamic> payload) async {
+    final response = await _apiClient.post(InventoryEndpoints.executeProduction, data: payload);
+    return BatchModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+  }
+
+  Future<void> dispatchOrder(int orderId) async {
+    await _apiClient.put(FranchiseEndpoints.dispatchOrder(orderId));
   }
 }

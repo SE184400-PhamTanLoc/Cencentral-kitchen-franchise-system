@@ -400,6 +400,122 @@ public class InventoryService : IInventoryService
         };
     }
 
+    public async Task<IngredientSummaryDto> CreateIngredientAsync(CreateIngredientDto dto)
+    {
+        var ingredient = new Ingredient
+        {
+            Name = dto.Name,
+            Sku = dto.Sku,
+            Unit = dto.Unit,
+            UnitPrice = dto.UnitPrice,
+            IsRawMaterial = dto.IsRawMaterial,
+            MinStockLevel = dto.MinStockLevel,
+            CreatedAt = DateTime.UtcNow
+        };
+        var created = await _ingredientRepository.AddAsync(ingredient);
+        return MapIngredientSummary(created);
+    }
+
+    public async Task<IngredientSummaryDto?> UpdateIngredientAsync(int ingredientId, UpdateIngredientDto dto)
+    {
+        var ingredient = await _ingredientRepository.GetByIdAsync(ingredientId);
+        if (ingredient == null) return null;
+
+        if (dto.Name != null) ingredient.Name = dto.Name;
+        if (dto.Sku != null) ingredient.Sku = dto.Sku;
+        if (dto.Unit != null) ingredient.Unit = dto.Unit;
+        if (dto.UnitPrice.HasValue) ingredient.UnitPrice = dto.UnitPrice.Value;
+        if (dto.IsRawMaterial.HasValue) ingredient.IsRawMaterial = dto.IsRawMaterial.Value;
+        if (dto.MinStockLevel.HasValue) ingredient.MinStockLevel = dto.MinStockLevel.Value;
+
+        var updated = await _ingredientRepository.UpdateAsync(ingredient);
+        return MapIngredientSummary(updated);
+    }
+
+    public async Task<bool> DeleteIngredientAsync(int ingredientId)
+    {
+        return await _ingredientRepository.DeleteAsync(ingredientId);
+    }
+
+    public async Task<List<RecipeResponseDto>> GetRecipesAsync(int? outputIngredientId = null)
+    {
+        var recipes = await _recipeRepository.GetAllAsync();
+        if (outputIngredientId.HasValue)
+        {
+            recipes = recipes.Where(r => r.OutputIngredientId == outputIngredientId.Value).ToList();
+        }
+        return recipes.Select(MapRecipeResponse).ToList();
+    }
+
+    public async Task<RecipeResponseDto?> GetRecipeByIdAsync(int recipeId)
+    {
+        var recipe = await _recipeRepository.GetByIdAsync(recipeId);
+        if (recipe == null) return null;
+        return MapRecipeResponse(recipe);
+    }
+
+    public async Task<RecipeResponseDto> CreateRecipeAsync(int userId, CreateRecipeDto dto)
+    {
+        var recipe = new Recipe
+        {
+            OutputIngredientId = dto.OutputIngredientId,
+            Description = dto.Description,
+            CreatedBy = userId,
+            RecipeDetails = dto.Details.Select(d => new RecipeDetail
+            {
+                InputIngredientId = d.InputIngredientId,
+                QuantityRequired = d.QuantityRequired
+            }).ToList()
+        };
+        var created = await _recipeRepository.AddAsync(recipe);
+        return MapRecipeResponse(await _recipeRepository.GetByIdAsync(created.RecipeId) ?? created);
+    }
+
+    public async Task<RecipeResponseDto?> UpdateRecipeAsync(int recipeId, UpdateRecipeDto dto)
+    {
+        var recipe = await _recipeRepository.GetByIdAsync(recipeId);
+        if (recipe == null) return null;
+
+        recipe.Description = dto.Description;
+        
+        recipe.RecipeDetails.Clear();
+        foreach(var detail in dto.Details) {
+            recipe.RecipeDetails.Add(new RecipeDetail {
+                RecipeId = recipeId,
+                InputIngredientId = detail.InputIngredientId,
+                QuantityRequired = detail.QuantityRequired
+            });
+        }
+
+        var updated = await _recipeRepository.UpdateAsync(recipe);
+        return MapRecipeResponse(await _recipeRepository.GetByIdAsync(updated.RecipeId) ?? updated);
+    }
+
+    public async Task<bool> DeleteRecipeAsync(int recipeId)
+    {
+        return await _recipeRepository.DeleteAsync(recipeId);
+    }
+
+    private static RecipeResponseDto MapRecipeResponse(Recipe recipe)
+    {
+        return new RecipeResponseDto
+        {
+            RecipeId = recipe.RecipeId,
+            OutputIngredientId = recipe.OutputIngredientId,
+            OutputIngredientName = recipe.OutputIngredient?.Name ?? "N/A",
+            Description = recipe.Description,
+            CreatedByName = recipe.CreatedByNavigation?.FullName,
+            Details = recipe.RecipeDetails.Select(rd => new RecipeInputDto
+            {
+                InputIngredientId = rd.InputIngredientId,
+                InputIngredientName = rd.InputIngredient?.Name ?? "N/A",
+                Unit = rd.InputIngredient?.Unit ?? "N/A",
+                IsRawMaterial = rd.InputIngredient?.IsRawMaterial ?? true,
+                QuantityRequired = rd.QuantityRequired
+            }).ToList()
+        };
+    }
+
     private async Task ValidateIngredientExistsAsync(int ingredientId)
     {
         var ingredient = await _ingredientRepository.GetByIdAsync(ingredientId);
@@ -424,6 +540,78 @@ public class InventoryService : IInventoryService
 
         if (remainingQuantity > quantity)
             throw new InvalidOperationException("Số lượng còn lại không được lớn hơn tổng số lượng lô.");
+    }
+
+    public async Task<BatchResponseDto> ExecuteProductionAsync(ExecuteProductionDto dto)
+    {
+        await ValidateIngredientExistsAsync(dto.OutputIngredientId);
+        await ValidateKitchenExistsAsync(dto.KitchenId);
+
+        var planRequest = new ProductionPlanRequestDto
+        {
+            OutputIngredientId = dto.OutputIngredientId,
+            RequestedQuantity = dto.RequestedQuantity
+        };
+
+        var plan = await BuildProductionPlanAsync(planRequest);
+
+        if (plan.Materials.Any(m => m.ShortageQuantity > 0))
+        {
+            throw new InvalidOperationException("Không đủ nguyên liệu thô để sản xuất. Vui lòng nhập thêm kho.");
+        }
+
+        var allBatches = await _batchRepository.GetAllAsync();
+
+        // Deduct raw materials using FIFO
+        foreach (var material in plan.Materials)
+        {
+            var batchesToDeduct = allBatches
+                .Where(b => b.IngredientId == material.IngredientId && b.KitchenId == dto.KitchenId)
+                .Where(b => b.RemainingQuantity > 0 && b.ExpiryDate >= DateOnly.FromDateTime(DateTime.UtcNow))
+                .OrderBy(b => b.ExpiryDate)
+                .ToList();
+
+            decimal remainingToDeduct = material.RequiredQuantity;
+
+            foreach (var batch in batchesToDeduct)
+            {
+                if (remainingToDeduct <= 0) break;
+
+                if (batch.RemainingQuantity >= remainingToDeduct)
+                {
+                    batch.RemainingQuantity -= remainingToDeduct;
+                    remainingToDeduct = 0;
+                }
+                else
+                {
+                    remainingToDeduct -= batch.RemainingQuantity;
+                    batch.RemainingQuantity = 0;
+                }
+                await _batchRepository.UpdateAsync(batch);
+            }
+
+            if (remainingToDeduct > 0)
+            {
+                throw new InvalidOperationException($"Lỗi đồng bộ: Không đủ lô nguyên liệu cho {material.IngredientName}.");
+            }
+        }
+
+        // Create new batch for the output ingredient
+        var newBatch = new Batch
+        {
+            BatchCode = dto.BatchCode,
+            IngredientId = dto.OutputIngredientId,
+            Quantity = dto.RequestedQuantity,
+            RemainingQuantity = dto.RequestedQuantity,
+            ManufactureDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            ExpiryDate = dto.ExpiryDate,
+            KitchenId = dto.KitchenId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var created = await _batchRepository.AddAsync(newBatch);
+        var createdWithIncludes = await _batchRepository.GetByIdAsync(created.BatchId) ?? created;
+        return MapBatch(createdWithIncludes);
     }
 }
 

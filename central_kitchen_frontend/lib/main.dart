@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 // Import các file core
 import 'core/constants/app_theme.dart';
@@ -13,6 +14,8 @@ import 'data/datasources/inventory_datasource.dart';
 import 'data/datasources/order_datasource.dart';
 import 'data/datasources/notification_datasource.dart';
 import 'data/datasources/delivery_chat_datasource.dart';
+import 'data/datasources/manager_datasource.dart';
+import 'data/datasources/manager_catalog_datasource.dart';
 
 // Import các file business
 import 'business/providers/auth_provider.dart';
@@ -21,6 +24,8 @@ import 'business/providers/inventory_provider.dart';
 import 'business/providers/cart_order_provider.dart';
 import 'business/providers/notification_provider.dart';
 import 'business/providers/delivery_chat_provider.dart';
+import 'business/providers/manager_provider.dart';
+import 'business/providers/manager_catalog_provider.dart';
 
 // Import các file presentation
 import 'presentation/screens/shared/login_screen.dart';
@@ -30,8 +35,15 @@ import 'presentation/screens/franchise/franchise_dashboard_screen.dart';
 import 'presentation/screens/shared/map_screen.dart';
 import 'presentation/screens/shared/chat_screen.dart';
 import 'presentation/screens/coordinator/coordinator_dashboard_screen.dart';
+import 'presentation/screens/manager/manager_dashboard_screen.dart';
+import 'presentation/screens/manager/manager_category_screen.dart';
+import 'presentation/screens/manager/manager_inventory_screen.dart';
+import 'presentation/screens/manager/manager_analytics_screen.dart';
+import 'presentation/screens/manager/manager_debt_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('vi_VN', null);
   runApp(const MyApp());
 }
 
@@ -67,6 +79,12 @@ class MyApp extends StatelessWidget {
         ProxyProvider<ApiClient, DeliveryChatDatasource>(
           update: (_, apiClient, _) => DeliveryChatDatasource(apiClient),
         ),
+        ProxyProvider<ApiClient, ManagerDatasource>(
+          update: (_, apiClient, _) => ManagerDatasource(apiClient),
+        ),
+        ProxyProvider<ApiClient, ManagerCatalogDatasource>(
+          update: (_, apiClient, _) => ManagerCatalogDatasource(apiClient),
+        ),
         
         // 3. Tạo các Providers quản lý State, phụ thuộc vào các Datasources tương ứng
         ChangeNotifierProxyProvider<AuthDatasource, AuthProvider>(
@@ -101,6 +119,16 @@ class MyApp extends StatelessWidget {
           update: (_, deliveryChatDatasource, previous) =>
               previous ?? DeliveryChatProvider(deliveryChatDatasource),
         ),
+        ChangeNotifierProxyProvider<ManagerDatasource, ManagerProvider>(
+          create: (context) => ManagerProvider(context.read<ManagerDatasource>()),
+          update: (_, managerDatasource, previous) =>
+              previous ?? ManagerProvider(managerDatasource),
+        ),
+        ChangeNotifierProxyProvider<ManagerCatalogDatasource, ManagerCatalogProvider>(
+          create: (context) => ManagerCatalogProvider(context.read<ManagerCatalogDatasource>()),
+          update: (_, managerCatalogDatasource, previous) =>
+              previous ?? ManagerCatalogProvider(managerCatalogDatasource),
+        ),
       ],
       child: MaterialApp(
         title: 'Central Kitchen Pro',
@@ -120,6 +148,11 @@ class MyApp extends StatelessWidget {
           '/map': (context) => const MapScreen(),
           '/chat': (context) => const ChatScreen(),
           '/coordinator': (context) => const CoordinatorDashboardScreen(),
+          '/manager': (context) => const ManagerDashboardScreen(),
+          '/manager/catalog': (context) => const ManagerCategoryScreen(),
+          '/manager/inventory': (context) => const ManagerInventoryScreen(),
+          '/manager/analytics': (context) => const ManagerAnalyticsScreen(),
+          '/manager/debt': (context) => const ManagerDebtScreen(),
         },
       ),
     );
@@ -179,8 +212,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
             return const KitchenDashboardScreen();
           } else if (role == 'SUPPLY_COORDINATOR') {
             return const CoordinatorDashboardScreen();
+          } else if (role == 'MANAGER') {
+            return const ManagerDashboardScreen();
           } else {
-            // FRANCHISE_STAFF, MANAGER → vào FranchiseDashboard
+            // FRANCHISE_STAFF → vào FranchiseDashboard
             return const FranchiseDashboardScreen();
           }
         } else {

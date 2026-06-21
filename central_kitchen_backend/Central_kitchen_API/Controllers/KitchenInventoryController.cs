@@ -147,5 +147,23 @@ public class KitchenInventoryController : ControllerBase
             return BadRequest(new { success = false, message = ex.Message });
         }
     }
-}
 
+    [HttpPost("production-plan/execute")]
+    public async Task<IActionResult> ExecuteProduction([FromBody] ExecuteProductionDto dto)
+    {
+        try
+        {
+            var batch = await _inventoryService.ExecuteProductionAsync(dto);
+            return Ok(new
+            {
+                success = true,
+                message = "Thực thi sản xuất thành công. Đã tạo lô thành phẩm mới và trừ nguyên liệu thô tương ứng.",
+                data = batch
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+}

@@ -21,15 +21,18 @@ public class OrderService : IOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly IIngredientRepository _ingredientRepository;
     private readonly INotificationService _notificationService;
+    private readonly IBatchRepository _batchRepository;
 
     public OrderService(
         IOrderRepository orderRepository,
         IIngredientRepository ingredientRepository,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IBatchRepository batchRepository)
     {
         _orderRepository = orderRepository;
         _ingredientRepository = ingredientRepository;
         _notificationService = notificationService;
+        _batchRepository = batchRepository;
     }
 
     // ==================== TASK THAI_API_01 ====================
@@ -83,7 +86,7 @@ public class OrderService : IOrderService
             StoreId = dto.StoreId,
             KitchenId = dto.KitchenId,
             TotalAmount = totalAmount,
-            OrderStatus = "Pending",
+            OrderStatus = "PENDING",
             Notes = dto.Notes,
             CreatedBy = createdByUserId,
             CreatedAt = DateTime.UtcNow,
@@ -153,17 +156,17 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId)
             ?? throw new InvalidOperationException($"Không tìm thấy đơn hàng ID={orderId}.");
 
-        // [BUG FIX] Chỉ được nhận hàng khi đơn đang ở trạng thái Approved hoặc Delivering
-        if (order.OrderStatus == "Delivered")
+        var currentStatus = order.OrderStatus?.ToUpper() ?? "";
+        if (currentStatus == "DELIVERED")
             throw new InvalidOperationException("Đơn hàng này đã được xác nhận nhận hàng trước đó.");
 
-        if (order.OrderStatus == "Cancelled")
-            throw new InvalidOperationException("Không thể xác nhận đơn hàng đã bị hủy.");
+        if (currentStatus == "CANCELLED" || currentStatus == "REJECTED")
+            throw new InvalidOperationException("Không thể xác nhận đơn hàng đã bị hủy hoặc từ chối.");
 
-        if (order.OrderStatus == "Pending")
+        if (currentStatus == "PENDING")
             throw new InvalidOperationException("Đơn hàng chưa được duyệt. Vui lòng đợi Manager xác nhận trước khi nhận hàng.");
 
-        if (order.OrderStatus != "Approved" && order.OrderStatus != "Delivering")
+        if (currentStatus != "APPROVED" && currentStatus != "DELIVERING" && currentStatus != "SHIPPED")
             throw new InvalidOperationException($"Không thể nhận hàng khi đơn ở trạng thái '{order.OrderStatus}'.");
 
         // 2. Xác định số lượng thực nhận từng nguyên liệu
@@ -202,14 +205,14 @@ public class OrderService : IOrderService
             });
         }
 
-        // 4. Cập nhật trạng thái đơn hàng thành "Delivered"
-        await _orderRepository.UpdateOrderStatusAsync(order.OrderId, "Delivered");
+        // 4. Cập nhật trạng thái đơn hàng thành "DELIVERED"
+        await _orderRepository.UpdateOrderStatusAsync(order.OrderId, "DELIVERED");
 
         return new ReceiveOrderResponseDto
         {
             OrderId = order.OrderId,
             OrderCode = order.OrderCode,
-            NewStatus = "Delivered",
+            NewStatus = "DELIVERED",
             InventoryUpdates = inventoryResults
         };
     }
@@ -337,14 +340,14 @@ public class OrderService : IOrderService
             ?? throw new InvalidOperationException($"Không tìm thấy đơn hàng ID={orderId}.");
 
         // Chỉ cho hủy khi đơn đang Pending
-        if (order.OrderStatus != "Pending")
+        if (order.OrderStatus?.ToUpper() != "PENDING")
             throw new InvalidOperationException(
                 $"Chỉ có thể hủy đơn hàng ở trạng thái 'Pending'. Trạng thái hiện tại: '{order.OrderStatus}'.");
 
         var previousStatus = order.OrderStatus;
 
         // Cập nhật trạng thái
-        await _orderRepository.UpdateOrderStatusAsync(orderId, "Cancelled");
+        await _orderRepository.UpdateOrderStatusAsync(orderId, "CANCELLED");
 
         // Hoàn lại công nợ (trừ đi số tiền đơn đã cộng vào khi đặt)
         await _orderRepository.UpdateStoreDebtAsync(order.StoreId, -order.TotalAmount);
@@ -369,7 +372,7 @@ public class OrderService : IOrderService
             OrderId = order.OrderId,
             OrderCode = order.OrderCode,
             PreviousStatus = previousStatus,
-            NewStatus = "Cancelled",
+            NewStatus = "CANCELLED",
             DebtReversed = order.TotalAmount,
             Message = $"Đơn hàng {order.OrderCode} đã được hủy. Hạn mức công nợ hoàn lại: {order.TotalAmount:N0} VNĐ."
         };
@@ -383,11 +386,11 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId)
             ?? throw new InvalidOperationException($"Không tìm thấy đơn hàng ID={orderId}.");
 
-        if (order.OrderStatus != "Pending")
+        if (order.OrderStatus?.ToUpper() != "PENDING")
             throw new InvalidOperationException(
                 $"Chỉ có thể duyệt đơn hàng ở trạng thái 'Pending'. Trạng thái hiện tại: '{order.OrderStatus}'.");
 
-        await _orderRepository.UpdateOrderStatusAsync(orderId, "Approved");
+        await _orderRepository.UpdateOrderStatusAsync(orderId, "APPROVED");
 
         // Gửi notification cho franchise staff của cửa hàng
         try
@@ -413,9 +416,75 @@ public class OrderService : IOrderService
         {
             OrderId = order.OrderId,
             OrderCode = order.OrderCode,
-            PreviousStatus = "Pending",
-            NewStatus = "Approved",
+            PreviousStatus = "PENDING",
+            NewStatus = "APPROVED",
             Message = $"Đơn hàng {order.OrderCode} đã được duyệt thành công."
+        };
+    }
+
+    public async Task<OrderStatusActionResponseDto> DispatchOrderAsync(int orderId, int dispatchedByUserId)
+    {
+        var order = await _orderRepository.GetOrderByIdAsync(orderId)
+            ?? throw new InvalidOperationException($"Không tìm thấy đơn hàng ID={orderId}.");
+
+        if (order.OrderStatus?.ToUpper() != "APPROVED")
+            throw new InvalidOperationException(
+                $"Chỉ có thể xuất kho đơn hàng ở trạng thái 'Approved'. Trạng thái hiện tại: '{order.OrderStatus}'.");
+
+        var allBatches = await _batchRepository.GetAllAsync();
+
+        foreach (var detail in order.OrderDetails)
+        {
+            var batchesToDeduct = allBatches
+                .Where(b => b.IngredientId == detail.IngredientId && b.KitchenId == order.KitchenId)
+                .Where(b => b.RemainingQuantity > 0 && b.ExpiryDate >= DateOnly.FromDateTime(DateTime.UtcNow))
+                .OrderBy(b => b.ExpiryDate)
+                .ToList();
+
+            decimal remainingToDeduct = detail.QuantityOrdered;
+
+            foreach (var batch in batchesToDeduct)
+            {
+                if (remainingToDeduct <= 0) break;
+
+                if (batch.RemainingQuantity >= remainingToDeduct)
+                {
+                    batch.RemainingQuantity -= remainingToDeduct;
+                    remainingToDeduct = 0;
+                }
+                else
+                {
+                    remainingToDeduct -= batch.RemainingQuantity;
+                    batch.RemainingQuantity = 0;
+                }
+                await _batchRepository.UpdateAsync(batch);
+            }
+
+            if (remainingToDeduct > 0)
+            {
+                throw new InvalidOperationException($"Không đủ tồn kho Bếp Trung Tâm cho nguyên liệu ID={detail.IngredientId}. Thiếu: {remainingToDeduct}");
+            }
+        }
+
+        await _orderRepository.UpdateOrderStatusAsync(orderId, "DELIVERING");
+
+        try
+        {
+            await _notificationService.PushToUsersAsync(
+                new List<int> { order.CreatedBy },
+                "Đơn hàng đang giao",
+                $"Đơn hàng {order.OrderCode} của bạn đã được xuất kho và đang trên đường giao đến."
+            );
+        }
+        catch { }
+
+        return new OrderStatusActionResponseDto
+        {
+            OrderId = order.OrderId,
+            OrderCode = order.OrderCode,
+            PreviousStatus = "APPROVED",
+            NewStatus = "DELIVERING",
+            Message = $"Đơn hàng {order.OrderCode} đã được xuất kho thành công."
         };
     }
 
@@ -427,11 +496,11 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId)
             ?? throw new InvalidOperationException($"Không tìm thấy đơn hàng ID={orderId}.");
 
-        if (order.OrderStatus != "Pending")
+        if (order.OrderStatus?.ToUpper() != "PENDING")
             throw new InvalidOperationException(
                 $"Chỉ có thể từ chối đơn hàng ở trạng thái 'Pending'. Trạng thái hiện tại: '{order.OrderStatus}'.");
 
-        await _orderRepository.UpdateOrderStatusAsync(orderId, "Cancelled");
+        await _orderRepository.UpdateOrderStatusAsync(orderId, "REJECTED");
 
         // Hoàn lại công nợ cho cửa hàng
         await _orderRepository.UpdateStoreDebtAsync(order.StoreId, -order.TotalAmount);
@@ -456,8 +525,8 @@ public class OrderService : IOrderService
         {
             OrderId = order.OrderId,
             OrderCode = order.OrderCode,
-            PreviousStatus = "Pending",
-            NewStatus = "Cancelled",
+            PreviousStatus = "PENDING",
+            NewStatus = "REJECTED",
             DebtReversed = order.TotalAmount,
             Message = $"Đơn hàng {order.OrderCode} đã bị từ chối. Hạn mức công nợ hoàn lại: {order.TotalAmount:N0} VNĐ."
         };
@@ -472,7 +541,7 @@ public class OrderService : IOrderService
 
         // Lọc theo status nếu có yêu cầu
         if (!string.IsNullOrWhiteSpace(statusFilter))
-            orders = orders.Where(o => o.OrderStatus == statusFilter).ToList();
+            orders = orders.Where(o => o.OrderStatus?.ToUpper() == statusFilter.ToUpper()).ToList();
 
         return orders.Select(MapToSummary).ToList();
     }
@@ -485,8 +554,8 @@ public class OrderService : IOrderService
             ?? throw new InvalidOperationException($"Không tìm thấy cửa hàng ID={storeId}.");
 
         var allOrders = await _orderRepository.GetOrdersByStoreAsync(storeId);
-        var pendingCount = allOrders.Count(o => o.OrderStatus == "Pending");
-        var activeCount = allOrders.Count(o => o.OrderStatus == "Approved" || o.OrderStatus == "Delivering");
+        var pendingCount = allOrders.Count(o => o.OrderStatus?.ToUpper() == "PENDING");
+        var activeCount = allOrders.Count(o => o.OrderStatus?.ToUpper() == "APPROVED" || o.OrderStatus?.ToUpper() == "DELIVERING" || o.OrderStatus?.ToUpper() == "SHIPPED");
 
         return new StoreCreditInfoDto
         {
