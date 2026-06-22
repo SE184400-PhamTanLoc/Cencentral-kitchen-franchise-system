@@ -211,6 +211,19 @@ class CartOrderProvider with ChangeNotifier {
     }
   }
 
+  /// Tải chi tiết một đơn hàng.
+  Future<void> loadOrderDetailAsync(int orderId) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      _selectedOrder = await _datasource.getOrderDetail(orderId);
+      _setLoading(false);
+    } catch (e) {
+      _setLoading(false);
+      _setError(_parseError(e));
+    }
+  }
+
   /// Xác nhận nhận hàng và reload tồn kho.
   Future<bool> receiveOrderAsync({
     required int orderId,

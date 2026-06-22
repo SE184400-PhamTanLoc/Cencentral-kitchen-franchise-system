@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../../business/providers/auth_provider.dart';
 import '../../../business/providers/delivery_chat_provider.dart';
@@ -16,7 +17,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   int? _selectedOrderId;
   bool _isTracking = false;
   bool _isInit = true;
@@ -31,32 +32,55 @@ class _MapScreenState extends State<MapScreen> {
   ];
   int _currentMockStep = 0;
 
+  late DeliveryChatProvider _deliveryChatProvider;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    
+    // Save reference for dispose
+    _deliveryChatProvider = context.read<DeliveryChatProvider>();
+
     if (_isInit) {
       final auth = context.read<AuthProvider>();
       final cart = context.read<CartOrderProvider>();
       
-      // Load orders to select from
-      if (auth.userRole == 'KITCHEN_STAFF') {
-        // Kitchen staff can view orders that need delivery
-        cart.loadOrdersAsync(1).then((_) {
-          _selectFirstOrder(cart);
-        });
-      } else {
-        // Store staff
-        final storeId = auth.storeId ?? 1;
-        cart.loadOrdersAsync(storeId).then((_) {
-          _selectFirstOrder(cart);
-        });
-      }
+      // Lấy tham số truyền vào (nếu có)
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final int? initialOrderId = args?['orderId'];
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (initialOrderId != null) {
+          // Nếu được truyền sẵn orderId từ Dashboard (Delivery)
+          setState(() {
+            _selectedOrderId = initialOrderId;
+          });
+          // Tải danh sách đơn hàng cho store 1 (fallback) hoặc storeId liên quan
+          // Ở đây tạm dùng storeId=1 nếu không có để fill dropdown (hoặc có thể để trống)
+          cart.loadOrdersAsync(1).then((_) {
+            _startMonitoring();
+          });
+        } else {
+          // Load orders to select from
+          if (auth.userRole == 'KITCHEN_STAFF' || auth.userRole == 'SUPPLY_COORDINATOR') {
+            cart.loadOrdersAsync(1).then((_) {
+              _selectFirstOrder(cart);
+            });
+          } else {
+            // Store staff
+            final storeId = auth.storeId ?? 1;
+            cart.loadOrdersAsync(storeId).then((_) {
+              _selectFirstOrder(cart);
+            });
+          }
+        }
+      });
       _isInit = false;
     }
   }
 
   void _selectFirstOrder(CartOrderProvider cart) {
-    if (cart.orders.isNotEmpty) {
+    if (cart.orders.isNotEmpty && mounted) {
       setState(() {
         _selectedOrderId = cart.orders.first.orderId;
       });
@@ -73,18 +97,15 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
-    final deliveryChat = context.read<DeliveryChatProvider>();
-    deliveryChat.stopLocationPolling();
-    deliveryChat.stopTrackingAndSendingLocation();
-    _mapController?.dispose();
+    _deliveryChatProvider.stopLocationPolling();
+    _deliveryChatProvider.stopTrackingAndSendingLocation();
+    _mapController.dispose();
     super.dispose();
   }
 
   // Move map camera to driver's position
   void _moveCamera(double lat, double lng) {
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(LatLng(lat, lng), 15),
-    );
+    _mapController.move(LatLng(lat, lng), 15.0);
   }
 
   Future<void> _startGpsTracking() async {
@@ -152,35 +173,69 @@ class _MapScreenState extends State<MapScreen> {
     final deliveryChat = context.watch<DeliveryChatProvider>();
     final latestLoc = deliveryChat.latestLocation;
 
-    // Build markers
-    final Set<Marker> markers = {};
+    // Build markers for flutter_map
+    final List<Marker> mapMarkers = [];
     if (latestLoc != null) {
       final pos = LatLng(latestLoc.latitude, latestLoc.longitude);
-      markers.add(
+      mapMarkers.add(
         Marker(
-          markerId: const MarkerId('driver'),
-          position: pos,
-          infoWindow: InfoWindow(
-            title: 'Tài xế (${latestLoc.driverName.isNotEmpty ? latestLoc.driverName : "Vận chuyển"})',
-            snippet: 'Cập nhật lúc: ${_formatTime(latestLoc.recordedAt)}',
+          point: pos,
+          width: 120,
+          height: 80,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))
+                  ],
+                ),
+                child: Text(
+                  latestLoc.driverName.isNotEmpty ? latestLoc.driverName : 'Tài xế',
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Icon(Icons.local_shipping_rounded, color: Colors.blue, size: 36),
+            ],
           ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        ),
-      );
-
-      // Add destination marker (Franchise Store)
-      markers.add(
-        Marker(
-          markerId: const MarkerId('store'),
-          position: const LatLng(10.782622, 106.684172),
-          infoWindow: const InfoWindow(
-            title: 'Cửa hàng nhượng quyền',
-            snippet: 'Điểm nhận hàng',
-          ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
         ),
       );
     }
+
+    // Add destination marker (Franchise Store)
+    mapMarkers.add(
+      Marker(
+        point: const LatLng(10.782622, 106.684172),
+        width: 120,
+        height: 80,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))
+                ],
+              ),
+              child: const Text(
+                'Cửa hàng',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red),
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Icon(Icons.storefront_rounded, color: Colors.red, size: 36),
+          ],
+        ),
+      ),
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -203,23 +258,33 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Stack(
         children: [
-          // 1. Google Map Fullscreen
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: latestLoc != null
+          // 1. FlutterMap OpenStreetMap Fullscreen
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: latestLoc != null
                   ? LatLng(latestLoc.latitude, latestLoc.longitude)
                   : const LatLng(10.762622, 106.660172),
-              zoom: 14,
+              initialZoom: 14.0,
             ),
-            onMapCreated: (controller) {
-              _mapController = controller;
-              if (latestLoc != null) {
-                _moveCamera(latestLoc.latitude, latestLoc.longitude);
-              }
-            },
-            markers: markers,
-            myLocationButtonEnabled: true,
-            zoomControlsEnabled: false, // Cleaner UI
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.central_kitchen_frontend',
+              ),
+              PolylineLayer(
+                polylines: <Polyline<Object>>[
+                  Polyline<Object>(
+                    points: _mockRoute,
+                    color: Colors.blue.withOpacity(0.5),
+                    strokeWidth: 4.0,
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: mapMarkers,
+              ),
+            ],
           ),
 
           // 2. Order Selector Overlay (Top)
@@ -338,6 +403,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
+            
           // 5. Simulation / Driver Controller Panel (Floating Bottom)
           Positioned(
             bottom: 24,
@@ -350,7 +416,7 @@ class _MapScreenState extends State<MapScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withOpacity(0.95),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 15))
@@ -420,6 +486,7 @@ class _MapScreenState extends State<MapScreen> {
                                   selectedColor: AppTheme.primary,
                                   backgroundColor: AppTheme.surfaceContainerLowest,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  showCheckmark: false,
                                   labelStyle: TextStyle(
                                     color: (isCurrent || _currentMockStep == index) ? Colors.white : AppTheme.primary,
                                     fontSize: 12,
@@ -440,8 +507,6 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
     );
-
-
   }
 
   String _formatTime(DateTime? dt) {

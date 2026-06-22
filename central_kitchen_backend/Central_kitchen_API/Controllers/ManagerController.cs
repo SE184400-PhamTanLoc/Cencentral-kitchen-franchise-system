@@ -7,7 +7,7 @@ namespace Central_kitchen_API.Controllers;
 
 [Route("api/manager")]
 [ApiController]
-[Authorize(Roles = "MANAGER,ADMIN")]
+[Authorize(Roles = "MANAGER,ADMIN,SUPPLY_COORDINATOR")]
 public class ManagerController : ControllerBase
 {
     private readonly IManagerService _managerService;

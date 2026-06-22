@@ -22,6 +22,8 @@ public class ManagerService : IManagerService
     {
         var totalStores = await _context.Stores.CountAsync();
         var pendingOrders = await _context.Orders.CountAsync(o => o.OrderStatus == "PENDING");
+        var dispatchedOrders = await _context.Orders.CountAsync(o => o.OrderStatus == "DISPATCHED");
+        var approvedOrders = await _context.Orders.CountAsync(o => o.OrderStatus == "APPROVED");
         var totalDebt = await _context.Stores.SumAsync(s => (decimal?)s.CurrentDebt) ?? 0;
         
         // Revenue is based on completed/shipped/approved orders today
@@ -35,7 +37,9 @@ public class ManagerService : IManagerService
             TotalStores = totalStores,
             TotalPendingOrders = pendingOrders,
             TotalDebt = totalDebt,
-            TodayRevenue = todayRevenue
+            TodayRevenue = todayRevenue,
+            DispatchedOrders = dispatchedOrders,
+            ApprovedOrders = approvedOrders
         };
     }
 
@@ -43,15 +47,18 @@ public class ManagerService : IManagerService
     {
         return await _context.Orders
             .Include(o => o.Store)
-            .Where(o => o.OrderStatus == "PENDING")
+            .Where(o => o.OrderStatus == "PENDING" || o.OrderStatus == "APPROVED" || o.OrderStatus == "DISPATCHED")
             .OrderByDescending(o => o.CreatedAt)
             .Select(o => new ManagerPendingOrderDto
             {
                 OrderId = o.OrderId,
                 OrderCode = o.OrderCode,
                 StoreName = o.Store.StoreName,
+                StoreId = o.StoreId ?? 0,
+                OrderStatus = o.OrderStatus ?? string.Empty,
                 TotalAmount = o.TotalAmount,
                 CreatedAt = o.CreatedAt ?? DateTime.UtcNow,
+                OrderDate = o.OrderDate ?? DateTime.UtcNow,
                 Notes = o.Notes ?? string.Empty
             })
             .ToListAsync();

@@ -50,8 +50,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startConversation() {
     final chatProvider = context.read<DeliveryChatProvider>();
-    chatProvider.loadConversationAsync(_selectedStoreId, _selectedKitchenId).then((_) => _scrollToBottom());
-    chatProvider.startChatPolling(_selectedStoreId, _selectedKitchenId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      chatProvider.loadConversationAsync(_selectedStoreId, _selectedKitchenId).then((_) => _scrollToBottom());
+      chatProvider.startChatPolling(_selectedStoreId, _selectedKitchenId);
+    });
   }
 
   @override

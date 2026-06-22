@@ -73,7 +73,7 @@ public class FranchiseOrdersController : ControllerBase
     // GET /api/franchise/orders/{storeId}
     // ============================================================
     [HttpGet("orders/{storeId:int}")]
-    [Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN")]
+    [Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN,SUPPLY_COORDINATOR")]
     public async Task<IActionResult> GetOrdersByStore(int storeId)
     {
         var orders = await _orderService.GetOrdersByStoreAsync(storeId);
@@ -91,7 +91,7 @@ public class FranchiseOrdersController : ControllerBase
     // GET /api/franchise/orders/detail/{orderId}
     // ============================================================
     [HttpGet("orders/detail/{orderId:int}")]
-    [Authorize(Roles = "FRANCHISE_STAFF,KITCHEN_STAFF,MANAGER,ADMIN")]
+    [Authorize(Roles = "FRANCHISE_STAFF,KITCHEN_STAFF,MANAGER,ADMIN,SUPPLY_COORDINATOR")]
     public async Task<IActionResult> GetOrderDetail(int orderId)
     {
         var order = await _orderService.GetOrderDetailAsync(orderId);
@@ -291,7 +291,7 @@ public class FranchiseOrdersController : ControllerBase
     // Role: MANAGER, KITCHEN_STAFF, ADMIN
     // ============================================================
     [HttpGet("orders/kitchen/{kitchenId:int}")]
-    [Authorize(Roles = "MANAGER,KITCHEN_STAFF,ADMIN")]
+    [Authorize(Roles = "MANAGER,KITCHEN_STAFF,ADMIN,SUPPLY_COORDINATOR")]
     public async Task<IActionResult> GetOrdersByKitchen(
         int kitchenId,
         [FromQuery] string? status = null)

@@ -8,6 +8,8 @@ public class ManagerDashboardStatsDto
     public int TotalPendingOrders { get; set; }
     public decimal TotalDebt { get; set; }
     public decimal TodayRevenue { get; set; }
+    public int DispatchedOrders { get; set; }
+    public int ApprovedOrders { get; set; }
 }
 
 public class ManagerPendingOrderDto
@@ -15,7 +17,10 @@ public class ManagerPendingOrderDto
     public int OrderId { get; set; }
     public string OrderCode { get; set; } = string.Empty;
     public string StoreName { get; set; } = string.Empty;
+    public int StoreId { get; set; }
+    public string OrderStatus { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime OrderDate { get; set; }
     public string Notes { get; set; } = string.Empty;
 }

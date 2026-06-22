@@ -176,6 +176,7 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
         },
       ),
       _BomTab(
+        allIngredients: provider.ingredients,
         ingredients: provider.ingredients.where((item) => !item.isRawMaterial).toList(),
         selectedIngredientId: _selectedIngredientId,
         selectedIngredient: selectedIngredient,
@@ -1206,6 +1207,7 @@ class _BatchCard extends StatelessWidget {
 }
 
 class _BomTab extends StatelessWidget {
+  final List<IngredientModel> allIngredients;
   final List<IngredientModel> ingredients;
   final int? selectedIngredientId;
   final IngredientModel? selectedIngredient;
@@ -1223,6 +1225,7 @@ class _BomTab extends StatelessWidget {
   final ValueChanged<int> onDispatchOrder;
 
   const _BomTab({
+    required this.allIngredients,
     required this.ingredients,
     required this.selectedIngredientId,
     required this.selectedIngredient,
@@ -1260,7 +1263,7 @@ class _BomTab extends StatelessWidget {
     final requiredProductsList = <_RequiredProduct>[];
     for (final product in aggregatedProducts.values) {
       IngredientModel? matching;
-      for (final i in ingredients) {
+      for (final i in allIngredients) {
         if (i.ingredientId == product.ingredientId) {
           matching = i;
           break;
@@ -1351,40 +1354,94 @@ class _BomTab extends StatelessWidget {
                       color: AppTheme.background,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.storefront_outlined, size: 20, color: AppTheme.onSurfaceVariant),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(order.storeName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              Text(
-                                '${order.orderCode} • ${order.orderDetails.length} mặt hàng',
-                                style: const TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
+                        Row(
+                          children: [
+                            const Icon(Icons.storefront_outlined, size: 20, color: AppTheme.onSurfaceVariant),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(order.storeName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  Text(
+                                    '${order.orderCode} • ${order.orderDetails.length} mặt hàng',
+                                    style: const TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                order.orderStatus,
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange.shade800),
+                              ),
+                            ),
+                            if (order.orderStatus.toUpperCase() == 'APPROVED') ...[
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.local_shipping_outlined, color: AppTheme.primary),
+                                tooltip: 'Xuất kho giao hàng',
+                                onPressed: () => onDispatchOrder(order.orderId),
                               ),
                             ],
-                          ),
+                          ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(20),
+                        if (order.orderDetails.isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                            child: Divider(height: 1),
                           ),
-                          child: Text(
-                            order.orderStatus,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange.shade800),
-                          ),
-                        ),
-                        if (order.orderStatus.toUpperCase() == 'APPROVED') ...[
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.local_shipping_outlined, color: AppTheme.primary),
-                            tooltip: 'Xuất kho giao hàng',
-                            onPressed: () => onDispatchOrder(order.orderId),
-                          ),
+                          ...order.orderDetails.map((detail) {
+                            IngredientModel? matching;
+                            for (final i in allIngredients) {
+                              if (i.ingredientId == detail.ingredientId) {
+                                matching = i;
+                                break;
+                              }
+                            }
+                            final double availableQty = matching?.availableQuantity ?? 0.0;
+                            final bool isShort = availableQty < detail.quantityOrdered;
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text('- ${detail.ingredientName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                                  ),
+                                  Text('${detail.quantityOrdered} ${detail.unit}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(width: 8),
+                                  if (isShort) ...[
+                                    ElevatedButton.icon(
+                                      onPressed: isLoading ? null : () => onCalculateProductBOM(detail.ingredientId, detail.quantityOrdered),
+                                      icon: const Icon(Icons.calculate_outlined, size: 14),
+                                      label: const Text('Tính BOM', style: TextStyle(fontSize: 11)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red.withOpacity(0.1),
+                                        foregroundColor: Colors.red,
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                        minimumSize: const Size(60, 26),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                                    const SizedBox(width: 4),
+                                    const Text('Đủ hàng', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.w600)),
+                                  ],
+                                ],
+                              ),
+                            );
+                          }).toList(),
                         ],
                       ],
                     ),
@@ -1433,8 +1490,18 @@ class _BomTab extends StatelessWidget {
                   style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
                 ),
                 const SizedBox(height: 14),
-                ...requiredProductsList.map(
-                  (product) => Container(
+                ...requiredProductsList.map((product) {
+                  IngredientModel? matching;
+                  for (final i in allIngredients) {
+                    if (i.ingredientId == product.ingredientId) {
+                      matching = i;
+                      break;
+                    }
+                  }
+                  final double availableQty = matching?.availableQuantity ?? 0.0;
+                  final bool isShort = availableQty < product.quantity;
+
+                  return Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -1466,22 +1533,29 @@ class _BomTab extends StatelessWidget {
                             ],
                           ),
                         ),
-                        ElevatedButton.icon(
-                          onPressed: isLoading ? null : () => onCalculateProductBOM(product.ingredientId, product.quantity),
-                          icon: const Icon(Icons.calculate_outlined, size: 16),
-                          label: const Text('Tính BOM', style: TextStyle(fontSize: 12)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepOrange.withOpacity(0.12),
-                            foregroundColor: Colors.deepOrange,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        if (isShort) ...[
+                          ElevatedButton.icon(
+                            onPressed: isLoading ? null : () => onCalculateProductBOM(product.ingredientId, product.quantity),
+                            icon: const Icon(Icons.calculate_outlined, size: 16),
+                            label: const Text('Tính BOM', style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepOrange.withOpacity(0.12),
+                              foregroundColor: Colors.deepOrange,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              minimumSize: Size.zero,
+                            ),
                           ),
-                        ),
+                        ] else ...[
+                          const Icon(Icons.check_circle_outline, color: Colors.green, size: 18),
+                          const SizedBox(width: 6),
+                          const Text('Đủ hàng', style: TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.w600)),
+                        ],
                       ],
                     ),
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),
