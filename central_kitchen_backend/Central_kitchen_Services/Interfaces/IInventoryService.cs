@@ -11,7 +11,7 @@ public interface IInventoryService
     Task<BatchResponseDto> CreateBatchAsync(CreateBatchDto dto);
     Task<BatchResponseDto?> UpdateBatchAsync(int batchId, UpdateBatchDto dto);
     Task<bool> DeleteBatchAsync(int batchId);
-    Task<ProductionPlanResponseDto> BuildProductionPlanAsync(ProductionPlanRequestDto dto);
+    Task<ProductionPlanResponseDto> BuildProductionPlanAsync(ProductionPlanRequestDto dto, int? kitchenId = null);
     Task<List<PendingOrderDto>> GetPendingOrdersAsync(int kitchenId);
     // Ingredient CRUD
     Task<IngredientSummaryDto> CreateIngredientAsync(CreateIngredientDto dto);

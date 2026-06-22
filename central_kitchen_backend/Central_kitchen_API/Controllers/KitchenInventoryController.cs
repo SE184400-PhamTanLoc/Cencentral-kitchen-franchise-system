@@ -104,7 +104,10 @@ public class KitchenInventoryController : ControllerBase
     {
         try
         {
-            var plan = await _inventoryService.BuildProductionPlanAsync(dto);
+            var kitchenIdClaim = User.FindFirst("KitchenId")?.Value;
+            int? kitchenId = int.TryParse(kitchenIdClaim, out var kid) ? kid : null;
+
+            var plan = await _inventoryService.BuildProductionPlanAsync(dto, kitchenId);
             return Ok(new
             {
                 success = true,

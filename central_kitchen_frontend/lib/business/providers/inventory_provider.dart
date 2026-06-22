@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../../data/datasources/inventory_datasource.dart';
 import '../../data/models/batch_model.dart';
 import '../../data/models/ingredient_model.dart';
@@ -158,7 +159,7 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Tạo lô thất bại.';
+      _errorMessage = _getErrorMessage(e, 'Tạo lô thất bại.');
       notifyListeners();
       return false;
     }
@@ -179,7 +180,7 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Cập nhật lô thất bại.';
+      _errorMessage = _getErrorMessage(e, 'Cập nhật lô thất bại.');
       notifyListeners();
       return false;
     }
@@ -197,7 +198,7 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Xóa lô thất bại.';
+      _errorMessage = _getErrorMessage(e, 'Xóa lô thất bại.');
       notifyListeners();
       return false;
     }
@@ -232,7 +233,7 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Không thể tính BOM.';
+      _errorMessage = _getErrorMessage(e, 'Không thể tính BOM.');
       notifyListeners();
       return false;
     }
@@ -264,7 +265,7 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Lỗi tính BOM tự động.';
+      _errorMessage = _getErrorMessage(e, 'Lỗi tính BOM tự động.');
       notifyListeners();
       return false;
     }
@@ -287,7 +288,7 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Thực thi sản xuất thất bại. Vui lòng kiểm tra lại số lượng tồn kho nguyên liệu thô.';
+      _errorMessage = _getErrorMessage(e, 'Thực thi sản xuất thất bại. Vui lòng kiểm tra lại số lượng tồn kho nguyên liệu thô.');
       notifyListeners();
       return false;
     }
@@ -306,9 +307,31 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Xuất kho thất bại. Vui lòng kiểm tra lại tồn kho Bếp Trung Tâm.';
+      _errorMessage = _getErrorMessage(e, 'Xuất kho thất bại. Vui lòng kiểm tra lại tồn kho Bếp Trung Tâm.');
       notifyListeners();
       return false;
     }
+  }
+
+  String _getErrorMessage(dynamic e, String defaultMessage) {
+    if (e is DioException) {
+      final responseData = e.response?.data;
+      if (responseData is Map) {
+        if (responseData.containsKey('message')) {
+          return responseData['message'].toString();
+        }
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'];
+          if (errors is Map) {
+            final firstErrorList = errors.values.first;
+            if (firstErrorList is List && firstErrorList.isNotEmpty) {
+              return firstErrorList.first.toString();
+            }
+            return errors.toString();
+          }
+        }
+      }
+    }
+    return defaultMessage;
   }
 }

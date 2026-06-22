@@ -104,6 +104,8 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/kitchen');
       } else if (role == 'SUPPLY_COORDINATOR') {
         Navigator.pushReplacementNamed(context, '/coordinator');
+      } else if (role == 'MANAGER') {
+        Navigator.pushReplacementNamed(context, '/manager');
       } else {
         Navigator.pushReplacementNamed(context, '/franchise');
       }

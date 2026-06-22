@@ -117,7 +117,7 @@ public class InventoryService : IInventoryService
         return await _batchRepository.DeleteAsync(batchId);
     }
 
-    public async Task<ProductionPlanResponseDto> BuildProductionPlanAsync(ProductionPlanRequestDto dto)
+    public async Task<ProductionPlanResponseDto> BuildProductionPlanAsync(ProductionPlanRequestDto dto, int? kitchenId = null)
     {
         var outputIngredient = await _ingredientRepository.GetByIdAsync(dto.OutputIngredientId);
         if (outputIngredient == null)
@@ -148,8 +148,8 @@ public class InventoryService : IInventoryService
                             Unit = outputIngredient.Unit,
                             IsRawMaterial = true,
                             RequiredQuantity = dto.RequestedQuantity,
-                            AvailableQuantity = GetAvailableQuantity(outputIngredient),
-                            ShortageQuantity = Math.Max(0, dto.RequestedQuantity - GetAvailableQuantity(outputIngredient))
+                            AvailableQuantity = GetAvailableQuantity(outputIngredient, kitchenId),
+                            ShortageQuantity = Math.Max(0, dto.RequestedQuantity - GetAvailableQuantity(outputIngredient, kitchenId))
                         }
                     }
                 };
@@ -159,7 +159,7 @@ public class InventoryService : IInventoryService
         }
 
         var rawTotals = new Dictionary<int, decimal>();
-        await ExpandToRawMaterialsAsync(recipe.OutputIngredientId, dto.RequestedQuantity, rawTotals, new HashSet<int>());
+        await ExpandToRawMaterialsAsync(recipe.OutputIngredientId, dto.RequestedQuantity, rawTotals, new HashSet<int>(), kitchenId);
 
         var rawIngredients = await _ingredientRepository.GetByIdsAsync(rawTotals.Keys);
         var ingredientLookup = rawIngredients.ToDictionary(i => i.IngredientId, i => i);
@@ -168,7 +168,7 @@ public class InventoryService : IInventoryService
             .Select(pair =>
             {
                 var ingredient = ingredientLookup[pair.Key];
-                var availableQuantity = GetAvailableQuantity(ingredient);
+                var availableQuantity = GetAvailableQuantity(ingredient, kitchenId);
                 return new ProductionPlanItemDto
                 {
                     IngredientId = ingredient.IngredientId,
@@ -242,7 +242,7 @@ public class InventoryService : IInventoryService
         {
             var ingredientId = req.Key;
             var quantity = req.Value;
-            await ExpandToRawMaterialsAsync(ingredientId, quantity, rawTotals, new HashSet<int>());
+            await ExpandToRawMaterialsAsync(ingredientId, quantity, rawTotals, new HashSet<int>(), kitchenId);
         }
 
         var rawIngredients = await _ingredientRepository.GetByIdsAsync(rawTotals.Keys);
@@ -252,7 +252,7 @@ public class InventoryService : IInventoryService
             .Select(pair =>
             {
                 var ingredient = ingredientLookup[pair.Key];
-                var availableQuantity = GetAvailableQuantity(ingredient);
+                var availableQuantity = GetAvailableQuantity(ingredient, kitchenId);
                 return new ProductionPlanItemDto
                 {
                     IngredientId = ingredient.IngredientId,
@@ -279,41 +279,72 @@ public class InventoryService : IInventoryService
         };
     }
 
-    private async Task ExpandToRawMaterialsAsync(int ingredientId, decimal multiplier, Dictionary<int, decimal> rawTotals, HashSet<int> recursionStack)
+    private async Task ExpandToRawMaterialsAsync(
+        int ingredientId, 
+        decimal requiredQty, 
+        Dictionary<int, decimal> rawTotals, 
+        HashSet<int> recursionStack,
+        int? kitchenId = null)
     {
         if (recursionStack.Contains(ingredientId))
             throw new InvalidOperationException("Phát hiện vòng lặp trong BOM. Vui lòng kiểm tra lại định mức sản xuất.");
 
-        var recipe = await _recipeRepository.GetByOutputIngredientIdAsync(ingredientId);
-        if (recipe == null)
+        var ingredient = await _ingredientRepository.GetByIdAsync(ingredientId);
+        if (ingredient == null)
+            throw new InvalidOperationException($"Không tìm thấy nguyên liệu có ID = {ingredientId}.");
+
+        var availableQty = GetAvailableQuantity(ingredient, kitchenId);
+
+        // Nếu lượng tồn kho khả dụng đáp ứng đủ nhu cầu, ghi nhận nhu cầu trực tiếp và dừng việc phân tách BOM
+        if (availableQty >= requiredQty)
         {
-            var ingredient = await _ingredientRepository.GetByIdAsync(ingredientId);
-            if (ingredient == null)
-                throw new InvalidOperationException($"Không tìm thấy nguyên liệu có ID = {ingredientId}.");
-
-            if (ingredient.IsRawMaterial == false)
-                throw new InvalidOperationException($"Nguyên liệu '{ingredient.Name}' chưa có BOM để quy đổi.");
-
             if (rawTotals.ContainsKey(ingredientId))
-                rawTotals[ingredientId] += multiplier;
+                rawTotals[ingredientId] += requiredQty;
             else
-                rawTotals[ingredientId] = multiplier;
+                rawTotals[ingredientId] = requiredQty;
             return;
         }
 
+        // Nếu tồn kho có một ít nhưng không đủ, tiêu thụ hết lượng tồn kho khả dụng đó
+        var shortageQty = requiredQty - availableQty;
+        if (availableQty > 0)
+        {
+            if (rawTotals.ContainsKey(ingredientId))
+                rawTotals[ingredientId] += availableQty;
+            else
+                rawTotals[ingredientId] = availableQty;
+        }
+
+        // Tìm công thức định mức để sản xuất lượng thiếu (shortageQty)
+        var recipe = await _recipeRepository.GetByOutputIngredientIdAsync(ingredientId);
+        if (recipe == null)
+        {
+            // Nếu không có công thức (nguyên liệu thô hoặc BFP chưa khai báo BOM), lượng thiếu này sẽ được yêu cầu trực tiếp
+            if (rawTotals.ContainsKey(ingredientId))
+                rawTotals[ingredientId] += shortageQty;
+            else
+                rawTotals[ingredientId] = shortageQty;
+            return;
+        }
+
+        // Phân tách lượng thiếu thành các nguyên liệu thành phần theo công thức
         recursionStack.Add(ingredientId);
 
         foreach (var detail in recipe.RecipeDetails)
         {
-            var requiredQuantity = detail.QuantityRequired * multiplier;
-            await ExpandToRawMaterialsAsync(detail.InputIngredientId, requiredQuantity, rawTotals, recursionStack);
+            var componentRequiredQty = detail.QuantityRequired * shortageQty;
+            await ExpandToRawMaterialsAsync(detail.InputIngredientId, componentRequiredQty, rawTotals, recursionStack, kitchenId);
         }
 
         recursionStack.Remove(ingredientId);
     }
 
-    private static decimal GetAvailableQuantity(Ingredient ingredient)
+    private static decimal GetAvailableQuantity(Ingredient ingredient, int? kitchenId = null)
     {
+        if (kitchenId.HasValue)
+        {
+            return ingredient.Batches?.Where(b => b.KitchenId == kitchenId.Value).Sum(b => b.RemainingQuantity) ?? 0m;
+        }
         return ingredient.Batches?.Sum(b => b.RemainingQuantity) ?? 0m;
     }
 

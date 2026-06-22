@@ -4,7 +4,7 @@ class ApiConstants {
   /// LƯU Ý: 'http://10.0.2.2:5170' là địa chỉ đặc biệt trỏ về localhost của máy host
   /// khi chạy trên Android Emulator. Nếu bạn dùng iOS Simulator, hãy đổi thành 'http://localhost:5170'.
   /// Nếu bạn dùng thiết bị thật, hãy cấu hình IP Wi-Fi cục bộ của máy chạy backend.
-  static const String baseUrl = 'http://127.0.0.1:5170';
+  static const String baseUrl = 'http://10.0.2.2:5170';
 
   /// Endpoint gọi API Đăng nhập
   static const String loginUrl = '/api/auth/login';

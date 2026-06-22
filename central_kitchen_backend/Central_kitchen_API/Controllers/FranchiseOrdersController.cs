@@ -19,7 +19,7 @@ namespace Central_kitchen_API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/franchise")]
-[Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN")]
+[Authorize]
 public class FranchiseOrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
@@ -36,6 +36,7 @@ public class FranchiseOrdersController : ControllerBase
     // Kiểm tra hạn mức công nợ trước khi lưu đơn với status "Pending".
     // ============================================================
     [HttpPost("orders")]
+    [Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN")]
     public async Task<IActionResult> PlaceOrder([FromBody] CreateOrderDto dto)
     {
         if (!ModelState.IsValid)
@@ -72,6 +73,7 @@ public class FranchiseOrdersController : ControllerBase
     // GET /api/franchise/orders/{storeId}
     // ============================================================
     [HttpGet("orders/{storeId:int}")]
+    [Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN")]
     public async Task<IActionResult> GetOrdersByStore(int storeId)
     {
         var orders = await _orderService.GetOrdersByStoreAsync(storeId);
@@ -89,6 +91,7 @@ public class FranchiseOrdersController : ControllerBase
     // GET /api/franchise/orders/detail/{orderId}
     // ============================================================
     [HttpGet("orders/detail/{orderId:int}")]
+    [Authorize(Roles = "FRANCHISE_STAFF,KITCHEN_STAFF,MANAGER,ADMIN")]
     public async Task<IActionResult> GetOrderDetail(int orderId)
     {
         var order = await _orderService.GetOrderDetailAsync(orderId);
@@ -109,6 +112,7 @@ public class FranchiseOrdersController : ControllerBase
     // Xác nhận nhận hàng + cập nhật tồn kho StoreInventory.
     // ============================================================
     [HttpPut("orders/{orderId:int}/receive")]
+    [Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN")]
     public async Task<IActionResult> ReceiveOrder(int orderId, [FromBody] ReceiveOrderDto dto)
     {
         if (!ModelState.IsValid)
@@ -137,6 +141,7 @@ public class FranchiseOrdersController : ControllerBase
     // Tự động trừ kho StoreInventory tương ứng.
     // ============================================================
     [HttpPost("inventory/consume")]
+    [Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN")]
     public async Task<IActionResult> ConsumeInventory([FromBody] ConsumeInventoryDto dto)
     {
         if (!ModelState.IsValid)
@@ -164,6 +169,7 @@ public class FranchiseOrdersController : ControllerBase
     // GET /api/franchise/inventory/{storeId}
     // ============================================================
     [HttpGet("inventory/{storeId:int}")]
+    [Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN")]
     public async Task<IActionResult> GetStoreInventory(int storeId)
     {
         var inventory = await _orderService.GetStoreInventoryAsync(storeId);
@@ -307,6 +313,7 @@ public class FranchiseOrdersController : ControllerBase
     // Role: FRANCHISE_STAFF, MANAGER, ADMIN
     // ============================================================
     [HttpGet("store/{storeId:int}/credit-info")]
+    [Authorize(Roles = "FRANCHISE_STAFF,MANAGER,ADMIN")]
     public async Task<IActionResult> GetStoreCreditInfo(int storeId)
     {
         try

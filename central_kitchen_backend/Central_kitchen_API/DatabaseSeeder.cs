@@ -184,6 +184,25 @@ public static class DatabaseSeeder
             };
             context.RecipeDetails.AddRange(recipeDetailsMeatball);
             await context.SaveChangesAsync();
+
+            // Recipe for Bánh mì xíu mại hoàn chỉnh (FIN-BMXM)
+            var recipeBMXM = new Recipe 
+            { 
+                OutputIngredientId = ingredients.First(i => i.Sku == "FIN-BMXM").IngredientId, 
+                Description = "Công thức lắp ráp Bánh mì xíu mại hoàn chỉnh",
+                CreatedBy = kitchenUserId
+            };
+            context.Recipes.Add(recipeBMXM);
+            await context.SaveChangesAsync();
+
+            var recipeDetailsBMXM = new List<RecipeDetail>
+            {
+                new RecipeDetail { RecipeId = recipeBMXM.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "FIN-BREAD").IngredientId, QuantityRequired = 1.0000m },
+                new RecipeDetail { RecipeId = recipeBMXM.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "FIN-MEATBALL").IngredientId, QuantityRequired = 1.0000m }
+            };
+            context.RecipeDetails.AddRange(recipeDetailsBMXM);
+            await context.SaveChangesAsync();
+
             logger.LogInformation("Recipes (BOM) seeded successfully.");
 
             // 7. Seed Batches (Kitchen Inventory)

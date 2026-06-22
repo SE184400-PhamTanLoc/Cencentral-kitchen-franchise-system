@@ -21,6 +21,8 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
   int? _selectedIngredientId;
   int _selectedSectionIndex = 0;
 
+  void updateState(VoidCallback fn) => setState(fn);
+
   @override
   void initState() {
     super.initState();
@@ -174,7 +176,7 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
         },
       ),
       _BomTab(
-        ingredients: provider.ingredients,
+        ingredients: provider.ingredients.where((item) => !item.isRawMaterial).toList(),
         selectedIngredientId: _selectedIngredientId,
         selectedIngredient: selectedIngredient,
         quantityController: _bomQuantityController,
@@ -202,22 +204,26 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
             );
           }
         },
-        onClear: provider.clearProductionPlan,
+        onClear: () {
+          provider.clearProductionPlan();
+          setState(() {
+            _selectedIngredientId = null;
+            _bomQuantityController.text = '1';
+          });
+        },
         onRefreshPendingOrders: () {
           final kitchenId = auth.kitchenId ?? 1;
           provider.fetchPendingOrders(kitchenId);
         },
-        onBuildAutoPlan: () async {
-          final kitchenId = auth.kitchenId ?? 1;
-          final success = await provider.buildAutoProductionPlan(kitchenId);
+        onCalculateProductBOM: (ingredientId, qty) async {
+          final success = await provider.buildProductionPlan(ingredientId, qty);
           if (!context.mounted) return;
           if (!success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(provider.errorMessage ?? 'Lỗi tính BOM tự động.')),
+              SnackBar(content: Text(provider.errorMessage ?? 'Không thể tính BOM.')),
             );
           }
         },
-        onClearAutoPlan: provider.clearAutoProductionPlan,
         onExecutePlan: (plan) {
           _showExecuteProductionDialog(context, plan);
         },
@@ -237,6 +243,7 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
             final success = await provider.dispatchOrder(orderId);
             if (!context.mounted) return;
             if (success) {
+              await provider.loadKitchenInventory(kitchenId: auth.kitchenId);
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xuất kho thành công.')));
             } else {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? 'Xuất kho thất bại.')));
@@ -470,12 +477,15 @@ extension on _KitchenInventoryManagementScreenState {
       return;
     }
 
+    final timestamp = DateTime.now().millisecondsSinceEpoch % 10000;
+    final defaultBatchCode = 'BAT-IMPORT-${DateTime.now().toIso8601String().split("T").first.replaceAll("-", "")}-$timestamp';
     final ingredientIdController = TextEditingController(text: ingredients.first.ingredientId.toString());
-    final batchCodeController = TextEditingController();
+    final batchCodeController = TextEditingController(text: defaultBatchCode);
     final quantityController = TextEditingController(text: '1');
     final remainingController = TextEditingController(text: '1');
     final manufactureDateController = TextEditingController(text: DateTime.now().toIso8601String().split('T').first);
-    final expiryDateController = TextEditingController();
+    final defaultExpiryDate = DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T').first;
+    final expiryDateController = TextEditingController(text: defaultExpiryDate);
 
     await showDialog(
       context: hostContext,
@@ -665,8 +675,12 @@ extension on _KitchenInventoryManagementScreenState {
     BuildContext hostContext,
     ProductionPlanModel plan,
   ) async {
-    final batchCodeController = TextEditingController();
-    final expiryDateController = TextEditingController();
+    final timestamp = DateTime.now().millisecondsSinceEpoch % 10000;
+    final skuPart = (plan.outputSku ?? 'SKU').replaceAll(" ", "-").toUpperCase();
+    final defaultBatchCode = 'BAT-$skuPart-${DateTime.now().toIso8601String().split("T").first.replaceAll("-", "")}-$timestamp';
+    final batchCodeController = TextEditingController(text: defaultBatchCode);
+    final defaultExpiry = DateTime.now().add(const Duration(days: 7)).toIso8601String().split('T').first;
+    final expiryDateController = TextEditingController(text: defaultExpiry);
 
     await showModalBottomSheet(
       context: hostContext,
@@ -745,6 +759,10 @@ extension on _KitchenInventoryManagementScreenState {
                           Navigator.pop(dialogContext);
                           hostContext.read<InventoryProvider>().clearProductionPlan();
                           hostContext.read<InventoryProvider>().clearAutoProductionPlan();
+                          updateState(() {
+                            _selectedIngredientId = null;
+                            _bomQuantityController.text = '1';
+                          });
                           await hostContext.read<InventoryProvider>().loadKitchenInventory(kitchenId: kitchenId);
                           ScaffoldMessenger.of(hostContext).showSnackBar(
                             const SnackBar(content: Text('Thực thi sản xuất thành công!')),
@@ -1200,8 +1218,7 @@ class _BomTab extends StatelessWidget {
   final VoidCallback onCalculate;
   final VoidCallback onClear;
   final VoidCallback onRefreshPendingOrders;
-  final VoidCallback onBuildAutoPlan;
-  final VoidCallback onClearAutoPlan;
+  final Function(int, double) onCalculateProductBOM;
   final ValueChanged<ProductionPlanModel> onExecutePlan;
   final ValueChanged<int> onDispatchOrder;
 
@@ -1218,18 +1235,46 @@ class _BomTab extends StatelessWidget {
     required this.onCalculate,
     required this.onClear,
     required this.onRefreshPendingOrders,
-    required this.onBuildAutoPlan,
-    required this.onClearAutoPlan,
+    required this.onCalculateProductBOM,
     required this.onExecutePlan,
     required this.onDispatchOrder,
   });
 
   @override
   Widget build(BuildContext context) {
+    final aggregatedProducts = <int, _RequiredProduct>{};
+    for (final order in pendingOrders) {
+      for (final detail in order.orderDetails) {
+        if (aggregatedProducts.containsKey(detail.ingredientId)) {
+          aggregatedProducts[detail.ingredientId]!.quantity += detail.quantityOrdered;
+        } else {
+          aggregatedProducts[detail.ingredientId] = _RequiredProduct(
+            ingredientId: detail.ingredientId,
+            name: detail.ingredientName,
+            unit: detail.unit,
+            quantity: detail.quantityOrdered,
+          );
+        }
+      }
+    }
+    final requiredProductsList = <_RequiredProduct>[];
+    for (final product in aggregatedProducts.values) {
+      IngredientModel? matching;
+      for (final i in ingredients) {
+        if (i.ingredientId == product.ingredientId) {
+          matching = i;
+          break;
+        }
+      }
+      if (matching != null && matching.availableQuantity < product.quantity) {
+        requiredProductsList.add(product);
+      }
+    }
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        // ====== SECTION 1: AUTO BOM FROM PENDING ORDERS ======
+        // ====== CARD 1: ĐƠN ĐẶT HÀNG CHỜ ======
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -1245,15 +1290,15 @@ class _BomTab extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.deepOrange.withOpacity(0.12),
+                      color: Colors.orange.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.receipt_long_outlined, color: Colors.deepOrange),
+                    child: const Icon(Icons.receipt_long_outlined, color: Colors.orange),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'Lập kế hoạch sản xuất',
+                      'Đơn đặt hàng chờ',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.primary),
                     ),
                   ),
@@ -1264,13 +1309,7 @@ class _BomTab extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Hệ thống tự động quét các đơn đặt hàng đang chờ từ các chi nhánh, đối chiếu công thức định mức (Recipes) để quy đổi ra danh sách nguyên liệu thô cần chuẩn bị.',
-                style: TextStyle(color: AppTheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 14),
-              // Pending orders summary
+              const SizedBox(height: 12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
@@ -1302,9 +1341,8 @@ class _BomTab extends StatelessWidget {
                   ],
                 ),
               ),
-              // List pending orders
               if (pendingOrders.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 ...pendingOrders.map(
                   (order) => Container(
                     margin: const EdgeInsets.only(bottom: 8),
@@ -1352,45 +1390,100 @@ class _BomTab extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: isLoading ? null : onBuildAutoPlan,
-                    icon: isLoading
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.auto_fix_high_outlined),
-                    label: const Text('Tự động tính BOM từ Đơn hàng chờ'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepOrange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                  ),
-                ),
               ],
             ],
           ),
         ),
-        // Auto BOM result
-        if (autoProductionPlan != null) ...[
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Kết quả BOM tự động', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.primary)),
-              TextButton.icon(
-                onPressed: onClearAutoPlan,
-                icon: const Icon(Icons.clear, size: 16),
-                label: const Text('Xóa'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _BomResultCard(
-            plan: autoProductionPlan!,
-            onExecute: () => onExecutePlan(autoProductionPlan!),
+
+        // ====== CARD 2: SẢN PHẨM CẦN SẢN XUẤT ======
+        if (pendingOrders.isNotEmpty && requiredProductsList.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppTheme.outlineVariant),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.precision_manufacturing_outlined, color: AppTheme.primary),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Sản phẩm cần chuẩn bị từ các đơn',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.primary),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Hệ thống tự động quy đổi nhu cầu sản phẩm từ các đơn hàng chờ. Nhấn "Tính BOM" để kiểm tra tính khả dụng của nguyên liệu.',
+                  style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
+                ),
+                const SizedBox(height: 14),
+                ...requiredProductsList.map(
+                  (product) => Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.background,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.outlineVariant.withOpacity(0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.inventory_2_outlined, size: 18, color: AppTheme.primary),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(product.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Tổng nhu cầu: ${product.quantity.toStringAsFixed(1)} ${product.unit}',
+                                style: const TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isLoading ? null : () => onCalculateProductBOM(product.ingredientId, product.quantity),
+                          icon: const Icon(Icons.calculate_outlined, size: 16),
+                          label: const Text('Tính BOM', style: TextStyle(fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepOrange.withOpacity(0.12),
+                            foregroundColor: Colors.deepOrange,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
         // ====== SECTION 2: MANUAL BOM ======
@@ -1500,6 +1593,8 @@ class _BomResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shortMaterials = plan.materials.where((m) => m.shortageQuantity > 0).toList();
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -1514,40 +1609,63 @@ class _BomResultCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text('Số lượng yêu cầu: ${plan.requestedQuantity}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
           const SizedBox(height: 14),
-          ...plan.materials.map(
-            (item) => Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
+          if (shortMaterials.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
-                color: AppTheme.background,
+                color: Colors.green.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(item.ingredientName, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      ),
-                      Text(
-                        item.shortageQuantity > 0 ? 'Thiếu' : 'Đủ',
-                        style: TextStyle(
-                          color: item.shortageQuantity > 0 ? Colors.red : Colors.green,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                  const Icon(Icons.check_circle, color: Colors.green),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: const Text(
+                      'Tất cả nguyên liệu đều đủ đáp ứng. Có thể thực thi sản xuất.',
+                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Text('Cần: ${item.requiredQuantity.toStringAsFixed(2)} ${item.unit}'),
-                  Text('Khả dụng: ${item.availableQuantity.toStringAsFixed(2)} ${item.unit}'),
-                  if (item.shortageQuantity > 0)
-                    Text('Thiếu: ${item.shortageQuantity.toStringAsFixed(2)} ${item.unit}', style: const TextStyle(color: Colors.red)),
                 ],
               ),
+            )
+          else
+            ...shortMaterials.map(
+              (item) => Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppTheme.background,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(item.ingredientName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                        const Text(
+                          'Thiếu',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text('Cần: ${item.requiredQuantity.toStringAsFixed(2)} ${item.unit}'),
+                    Text('Khả dụng: ${item.availableQuantity.toStringAsFixed(2)} ${item.unit}'),
+                    Text('Thiếu: ${item.shortageQuantity.toStringAsFixed(2)} ${item.unit}', style: const TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
             ),
-          ),
           if (onExecute != null) ...[
             const SizedBox(height: 14),
             SizedBox(
@@ -1627,4 +1745,18 @@ class _MenuTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _RequiredProduct {
+  final int ingredientId;
+  final String name;
+  final String unit;
+  double quantity;
+
+  _RequiredProduct({
+    required this.ingredientId,
+    required this.name,
+    required this.unit,
+    required this.quantity,
+  });
 }

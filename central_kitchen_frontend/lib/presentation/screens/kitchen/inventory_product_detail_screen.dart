@@ -5,6 +5,7 @@ import '../../../business/providers/inventory_provider.dart';
 import '../../../core/constants/app_theme.dart';
 import '../../../data/models/batch_model.dart';
 import '../../../data/models/ingredient_model.dart';
+import '../../../data/models/production_plan_model.dart';
 
 class InventoryProductDetailScreen extends StatefulWidget {
   final IngredientModel ingredient;
@@ -120,7 +121,13 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                             shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                             ),
-                            builder: (_) => _ProductionPlanSheet(provider: provider),
+                            builder: (_) => _ProductionPlanSheet(
+                              provider: provider,
+                              onExecutePlan: (plan) {
+                                Navigator.pop(context);
+                                _showExecuteProductionDialog(context, plan);
+                              },
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -292,6 +299,116 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
       );
     },
   );
+  }
+
+  Future<void> _showExecuteProductionDialog(
+    BuildContext hostContext,
+    ProductionPlanModel plan,
+  ) async {
+    final timestamp = DateTime.now().millisecondsSinceEpoch % 10000;
+    final skuPart = (plan.outputSku ?? 'SKU').replaceAll(" ", "-").toUpperCase();
+    final defaultBatchCode = 'BAT-$skuPart-${DateTime.now().toIso8601String().split("T").first.replaceAll("-", "")}-$timestamp';
+    final batchCodeController = TextEditingController(text: defaultBatchCode);
+    final defaultExpiry = DateTime.now().add(const Duration(days: 7)).toIso8601String().split('T').first;
+    final expiryDateController = TextEditingController(text: defaultExpiry);
+
+    await showModalBottomSheet(
+      context: hostContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(dialogContext).viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: AppTheme.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Thực thi sản xuất',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(dialogContext),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Sản xuất ${plan.requestedQuantity} ${plan.outputIngredientName}',
+                    style: const TextStyle(color: AppTheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 18),
+                  TextFormField(
+                    controller: batchCodeController,
+                    decoration: const InputDecoration(labelText: 'Mã lô thành phẩm', prefixIcon: Icon(Icons.qr_code)),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: expiryDateController,
+                    decoration: const InputDecoration(labelText: 'Hạn sử dụng (YYYY-MM-DD)', prefixIcon: Icon(Icons.event)),
+                    keyboardType: TextInputType.datetime,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        if (batchCodeController.text.trim().isEmpty || expiryDateController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(content: Text('Vui lòng nhập đủ mã lô và hạn sử dụng.')),
+                          );
+                          return;
+                        }
+
+                        final auth = hostContext.read<AuthProvider>();
+                        final kitchenId = auth.kitchenId ?? 1;
+
+                        final success = await dialogContext.read<InventoryProvider>().executeProduction({
+                          'outputIngredientId': plan.outputIngredientId,
+                          'requestedQuantity': plan.requestedQuantity,
+                          'batchCode': batchCodeController.text.trim(),
+                          'expiryDate': expiryDateController.text.trim(),
+                          'kitchenId': kitchenId,
+                        });
+
+                        if (!dialogContext.mounted) return;
+                        if (success) {
+                          Navigator.pop(dialogContext);
+                          hostContext.read<InventoryProvider>().clearProductionPlan();
+                          await hostContext.read<InventoryProvider>().fetchIngredientDetail(plan.outputIngredientId);
+                          ScaffoldMessenger.of(hostContext).showSnackBar(
+                            const SnackBar(content: Text('Thực thi sản xuất thành công!')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            SnackBar(content: Text(dialogContext.read<InventoryProvider>().errorMessage ?? 'Thực thi sản xuất thất bại')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.precision_manufacturing),
+                      label: const Text('Xác nhận sản xuất'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _confirmDeleteBatch(BuildContext context, BatchModel batch) async {
@@ -678,8 +795,12 @@ class _RecipeSection extends StatelessWidget {
 
 class _ProductionPlanSheet extends StatelessWidget {
   final InventoryProvider provider;
+  final ValueChanged<ProductionPlanModel> onExecutePlan;
 
-  const _ProductionPlanSheet({required this.provider});
+  const _ProductionPlanSheet({
+    required this.provider,
+    required this.onExecutePlan,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -687,6 +808,8 @@ class _ProductionPlanSheet extends StatelessWidget {
     if (plan == null) {
       return const SizedBox.shrink();
     }
+
+    final shortMaterials = plan.materials.where((m) => m.shortageQuantity > 0).toList();
 
     return SafeArea(
       child: Padding(
@@ -699,38 +822,78 @@ class _ProductionPlanSheet extends StatelessWidget {
             const SizedBox(height: 4),
             Text('Số lượng yêu cầu: ${plan.requestedQuantity}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
             const SizedBox(height: 18),
-            ...plan.materials.map(
-              (item) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(14),
+            if (shortMaterials.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 14),
                 decoration: BoxDecoration(
-                  color: AppTheme.background,
+                  color: Colors.green.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.green.withOpacity(0.3)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(item.ingredientName, style: const TextStyle(fontWeight: FontWeight.w700)),
-                        ),
-                        Text(
-                          item.shortageQuantity > 0 ? 'Thiếu' : 'Đủ',
-                          style: TextStyle(
-                            color: item.shortageQuantity > 0 ? Colors.red : Colors.green,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                    const Icon(Icons.check_circle, color: Colors.green),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: const Text(
+                        'Tất cả nguyên liệu đều đủ đáp ứng. Có thể thực thi sản xuất.',
+                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                      ),
                     ),
-                    const SizedBox(height: 6),
-                    Text('Cần: ${item.requiredQuantity.toStringAsFixed(2)} ${item.unit}'),
-                    Text('Khả dụng: ${item.availableQuantity.toStringAsFixed(2)} ${item.unit}'),
-                    if (item.shortageQuantity > 0)
-                      Text('Thiếu: ${item.shortageQuantity.toStringAsFixed(2)} ${item.unit}', style: const TextStyle(color: Colors.red)),
                   ],
+                ),
+              )
+            else
+              ...shortMaterials.map(
+                (item) => Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(item.ingredientName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                          ),
+                          const Text(
+                            'Thiếu',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text('Cần: ${item.requiredQuantity.toStringAsFixed(2)} ${item.unit}'),
+                      Text('Khả dụng: ${item.availableQuantity.toStringAsFixed(2)} ${item.unit}'),
+                      Text('Thiếu: ${item.shortageQuantity.toStringAsFixed(2)} ${item.unit}', style: const TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: plan.materials.any((m) => m.shortageQuantity > 0)
+                    ? null
+                    : () => onExecutePlan(plan),
+                icon: const Icon(Icons.precision_manufacturing),
+                label: const Text('Thực thi sản xuất'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               ),
             ),

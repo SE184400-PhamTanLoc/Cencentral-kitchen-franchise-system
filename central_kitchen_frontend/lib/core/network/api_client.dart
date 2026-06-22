@@ -40,6 +40,7 @@ class ApiClient {
         },
         onError: (DioException error, handler) async {
           print('[ERROR] ${error.response?.statusCode} - ${error.message}');
+          print('[ERROR RESPONSE DATA] ${error.response?.data}');
           
           if (error.response?.statusCode == 401) {
             // Token hết hạn hoặc không hợp lệ -> Xóa token cũ và điều hướng về Login
