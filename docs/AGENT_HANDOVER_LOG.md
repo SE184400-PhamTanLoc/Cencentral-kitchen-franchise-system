@@ -18,6 +18,23 @@ Tất cả các agent làm việc trong dự án này bắt buộc phải đọc
 
 ## Lịch sử cập nhật:
 
+### 📅 [23/06/2026] - Nâng cấp Coordinator Dashboard, Tích hợp OpenStreetMap và Sửa lỗi Lifecycle
+- **Người thực hiện:** Antigravity (AI Agent)
+- **Công việc đã làm:**
+  - Nâng cấp UI/UX toàn diện cho màn hình Điều phối viên (Coordinator Dashboard) với phong cách Glassmorphism, thanh tìm kiếm, filter thông minh và giao diện hóa đơn chi tiết.
+  - Gỡ bỏ hoàn toàn `google_maps_flutter` và Google API Key khỏi AndroidManifest. Tích hợp `flutter_map` (OpenStreetMap) và `latlong2` để hiển thị bản đồ miễn phí mà không cần API Key.
+  - Cập nhật Provider (`CartOrderProvider`, `DeliveryChatProvider`) và fix triệt để lỗi unmounted context lifecycle trong `MapScreen` và lỗi `setState during build` trong `ChatScreen`.
+  - Fix lỗi giả lập Android bị giới hạn bộ nhớ (INSTALL_FAILED_INSUFFICIENT_STORAGE) bằng cách gỡ các ứng dụng rác, giải phóng dung lượng.
+- **File đã chỉnh sửa chính:**
+  - `central_kitchen_frontend/lib/presentation/screens/coordinator/coordinator_dashboard_screen.dart`
+  - `central_kitchen_frontend/lib/presentation/screens/shared/map_screen.dart`
+  - `central_kitchen_frontend/lib/presentation/screens/shared/chat_screen.dart`
+  - `central_kitchen_frontend/pubspec.yaml`
+  - `central_kitchen_frontend/android/app/src/main/AndroidManifest.xml`
+- **Ghi chú/Vấn đề cần lưu ý cho Agent tiếp theo:**
+  - Đã chuyển sang dùng `flutter_map` phiên bản v8+, lưu ý `Polyline` cần định dạng Generic Type chuẩn `<Polyline<Object>>`.
+  - Nếu cài APK trên giả lập báo lỗi hết dung lượng (Insufficient Storage), hãy vào shell gỡ bớt package rác hoặc wipe data.
+
 ### 📅 [20/06/2026] - Phiên làm việc về UI Glassmorphism & Tích hợp Module
 - **Người thực hiện:** Antigravity (AI Agent)
 - **Công việc đã làm:**
