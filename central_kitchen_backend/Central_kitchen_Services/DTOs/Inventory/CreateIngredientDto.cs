@@ -1,0 +1,26 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace Central_kitchen_Services.DTOs.Inventory;
+
+public class CreateIngredientDto
+{
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; } = null!;
+
+    [Required]
+    [MaxLength(50)]
+    public string Sku { get; set; } = null!;
+
+    [Required]
+    [MaxLength(20)]
+    public string Unit { get; set; } = null!;
+
+    [Range(0, double.MaxValue)]
+    public decimal UnitPrice { get; set; }
+
+    public bool IsRawMaterial { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal MinStockLevel { get; set; }
+}

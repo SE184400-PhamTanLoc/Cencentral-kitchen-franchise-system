@@ -26,7 +26,7 @@ public class OrderRepository : IOrderRepository
             .Include(o => o.Store)
             .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Ingredient)
-            .Where(o => o.KitchenId == kitchenId && o.OrderStatus == "Pending")
+            .Where(o => o.KitchenId == kitchenId && (o.OrderStatus.ToUpper() == "PENDING" || o.OrderStatus.ToUpper() == "APPROVED"))
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
     }

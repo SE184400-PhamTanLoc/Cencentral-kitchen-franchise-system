@@ -137,7 +137,7 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
                   ),
                   child: const Text(
                     'Supply Coordinator',
-                    style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],

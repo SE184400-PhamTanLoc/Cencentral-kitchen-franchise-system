@@ -255,6 +255,31 @@ public class FranchiseOrdersController : ControllerBase
     }
 
     // ============================================================
+    // BỔ SUNG — Bếp trung tâm xuất kho giao hàng
+    // PUT /api/franchise/orders/{orderId}/dispatch
+    // Role: KITCHEN_STAFF, MANAGER, ADMIN
+    // ============================================================
+    [HttpPut("orders/{orderId:int}/dispatch")]
+    [Authorize(Roles = "KITCHEN_STAFF,MANAGER,ADMIN")]
+    public async Task<IActionResult> DispatchOrder(int orderId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                       ?? User.FindFirst("sub")?.Value;
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { success = false, message = "Không xác định được người dùng." });
+
+        try
+        {
+            var result = await _orderService.DispatchOrderAsync(orderId, userId);
+            return Ok(new { success = true, message = result.Message, data = result });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    // ============================================================
     // BỔ SUNG — Lấy danh sách đơn hàng theo bếp trung tâm
     // GET /api/franchise/orders/kitchen/{kitchenId}?status=Pending
     // Role: MANAGER, KITCHEN_STAFF, ADMIN

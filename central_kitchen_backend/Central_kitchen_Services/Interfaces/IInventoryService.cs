@@ -13,6 +13,19 @@ public interface IInventoryService
     Task<bool> DeleteBatchAsync(int batchId);
     Task<ProductionPlanResponseDto> BuildProductionPlanAsync(ProductionPlanRequestDto dto);
     Task<List<PendingOrderDto>> GetPendingOrdersAsync(int kitchenId);
+    // Ingredient CRUD
+    Task<IngredientSummaryDto> CreateIngredientAsync(CreateIngredientDto dto);
+    Task<IngredientSummaryDto?> UpdateIngredientAsync(int ingredientId, UpdateIngredientDto dto);
+    Task<bool> DeleteIngredientAsync(int ingredientId);
+
+    // Recipe CRUD
+    Task<List<RecipeResponseDto>> GetRecipesAsync(int? outputIngredientId = null);
+    Task<RecipeResponseDto?> GetRecipeByIdAsync(int recipeId);
+    Task<RecipeResponseDto> CreateRecipeAsync(int userId, CreateRecipeDto dto);
+    Task<RecipeResponseDto?> UpdateRecipeAsync(int recipeId, UpdateRecipeDto dto);
+    Task<bool> DeleteRecipeAsync(int recipeId);
+
     Task<ProductionPlanResponseDto> BuildAutoProductionPlanAsync(int kitchenId);
+    Task<BatchResponseDto> ExecuteProductionAsync(ExecuteProductionDto dto);
 }
 

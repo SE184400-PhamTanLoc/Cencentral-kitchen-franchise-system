@@ -64,6 +64,12 @@ public interface IOrderService
     Task<OrderStatusActionResponseDto> ApproveOrderAsync(int orderId, int approvedByUserId, OrderStatusActionDto dto);
 
     /// <summary>
+    /// Bếp trung tâm xuất kho một đơn hàng Approved → chuyển sang Delivering.
+    /// Tự động trừ Batches tại bếp trung tâm theo FIFO.
+    /// </summary>
+    Task<OrderStatusActionResponseDto> DispatchOrderAsync(int orderId, int dispatchedByUserId);
+
+    /// <summary>
     /// Manager/Admin từ chối một đơn hàng Pending → chuyển sang Cancelled.
     /// Hoàn lại CurrentDebt và gửi notification cho cửa hàng franchise.
     /// </summary>

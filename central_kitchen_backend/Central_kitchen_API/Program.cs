@@ -45,6 +45,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IDeliveryService, DeliveryService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IManagerService, ManagerService>();
 
 // ==================== JWT AUTHENTICATION ====================
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

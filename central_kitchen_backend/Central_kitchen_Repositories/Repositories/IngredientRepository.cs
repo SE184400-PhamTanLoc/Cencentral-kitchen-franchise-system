@@ -62,4 +62,28 @@ public class IngredientRepository : IIngredientRepository
             .AsSplitQuery()
             .FirstOrDefaultAsync(i => i.IngredientId == ingredientId);
     }
+
+    public async Task<Ingredient> AddAsync(Ingredient ingredient)
+    {
+        _context.Ingredients.Add(ingredient);
+        await _context.SaveChangesAsync();
+        return ingredient;
+    }
+
+    public async Task<Ingredient> UpdateAsync(Ingredient ingredient)
+    {
+        _context.Ingredients.Update(ingredient);
+        await _context.SaveChangesAsync();
+        return ingredient;
+    }
+
+    public async Task<bool> DeleteAsync(int ingredientId)
+    {
+        var ingredient = await _context.Ingredients.FindAsync(ingredientId);
+        if (ingredient == null) return false;
+        
+        _context.Ingredients.Remove(ingredient);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

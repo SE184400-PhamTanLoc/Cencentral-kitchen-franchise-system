@@ -218,6 +218,31 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
           }
         },
         onClearAutoPlan: provider.clearAutoProductionPlan,
+        onExecutePlan: (plan) {
+          _showExecuteProductionDialog(context, plan);
+        },
+        onDispatchOrder: (orderId) async {
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Xác nhận xuất kho'),
+              content: const Text('Bạn có chắc chắn muốn xuất kho cho đơn hàng này? Hệ thống sẽ trừ tồn kho thực tế.'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+                FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Xuất kho')),
+              ],
+            ),
+          );
+          if (confirm == true) {
+            final success = await provider.dispatchOrder(orderId);
+            if (!context.mounted) return;
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xuất kho thành công.')));
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? 'Xuất kho thất bại.')));
+            }
+          }
+        },
       ),
     ];
 
@@ -634,6 +659,113 @@ extension on _KitchenInventoryManagementScreenState {
       );
     },
   );
+  }
+
+  Future<void> _showExecuteProductionDialog(
+    BuildContext hostContext,
+    ProductionPlanModel plan,
+  ) async {
+    final batchCodeController = TextEditingController();
+    final expiryDateController = TextEditingController();
+
+    await showModalBottomSheet(
+      context: hostContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (dialogContext) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(dialogContext).viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: AppTheme.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Thực thi sản xuất',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(dialogContext),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Sản xuất ${plan.requestedQuantity} ${plan.outputIngredientName}',
+                    style: const TextStyle(color: AppTheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 18),
+                  TextFormField(
+                    controller: batchCodeController,
+                    decoration: const InputDecoration(labelText: 'Mã lô thành phẩm', prefixIcon: Icon(Icons.qr_code)),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: expiryDateController,
+                    decoration: const InputDecoration(labelText: 'Hạn sử dụng (YYYY-MM-DD)', prefixIcon: Icon(Icons.event)),
+                    keyboardType: TextInputType.datetime,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        if (batchCodeController.text.trim().isEmpty || expiryDateController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(content: Text('Vui lòng nhập đủ mã lô và hạn sử dụng.')),
+                          );
+                          return;
+                        }
+
+                        final auth = hostContext.read<AuthProvider>();
+                        final kitchenId = auth.kitchenId ?? 1;
+
+                        final success = await dialogContext.read<InventoryProvider>().executeProduction({
+                          'outputIngredientId': plan.outputIngredientId,
+                          'requestedQuantity': plan.requestedQuantity,
+                          'batchCode': batchCodeController.text.trim(),
+                          'expiryDate': expiryDateController.text.trim(),
+                          'kitchenId': kitchenId,
+                        });
+
+                        if (!dialogContext.mounted) return;
+                        if (success) {
+                          Navigator.pop(dialogContext);
+                          hostContext.read<InventoryProvider>().clearProductionPlan();
+                          hostContext.read<InventoryProvider>().clearAutoProductionPlan();
+                          await hostContext.read<InventoryProvider>().loadKitchenInventory(kitchenId: kitchenId);
+                          ScaffoldMessenger.of(hostContext).showSnackBar(
+                            const SnackBar(content: Text('Thực thi sản xuất thành công!')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            SnackBar(content: Text(dialogContext.read<InventoryProvider>().errorMessage ?? 'Thực thi sản xuất thất bại')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.precision_manufacturing),
+                      label: const Text('Xác nhận sản xuất'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -1070,6 +1202,8 @@ class _BomTab extends StatelessWidget {
   final VoidCallback onRefreshPendingOrders;
   final VoidCallback onBuildAutoPlan;
   final VoidCallback onClearAutoPlan;
+  final ValueChanged<ProductionPlanModel> onExecutePlan;
+  final ValueChanged<int> onDispatchOrder;
 
   const _BomTab({
     required this.ingredients,
@@ -1086,6 +1220,8 @@ class _BomTab extends StatelessWidget {
     required this.onRefreshPendingOrders,
     required this.onBuildAutoPlan,
     required this.onClearAutoPlan,
+    required this.onExecutePlan,
+    required this.onDispatchOrder,
   });
 
   @override
@@ -1204,6 +1340,14 @@ class _BomTab extends StatelessWidget {
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange.shade800),
                           ),
                         ),
+                        if (order.orderStatus.toUpperCase() == 'APPROVED') ...[
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.local_shipping_outlined, color: AppTheme.primary),
+                            tooltip: 'Xuất kho giao hàng',
+                            onPressed: () => onDispatchOrder(order.orderId),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1244,7 +1388,10 @@ class _BomTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _BomResultCard(plan: autoProductionPlan!),
+          _BomResultCard(
+            plan: autoProductionPlan!,
+            onExecute: () => onExecutePlan(autoProductionPlan!),
+          ),
         ],
         // ====== SECTION 2: MANUAL BOM ======
         const SizedBox(height: 24),
@@ -1335,7 +1482,10 @@ class _BomTab extends StatelessWidget {
             ),
           )
         else
-          _BomResultCard(plan: productionPlan!),
+          _BomResultCard(
+            plan: productionPlan!,
+            onExecute: () => onExecutePlan(productionPlan!),
+          ),
         const SizedBox(height: 20),
       ],
     );
@@ -1344,8 +1494,9 @@ class _BomTab extends StatelessWidget {
 
 class _BomResultCard extends StatelessWidget {
   final ProductionPlanModel plan;
+  final VoidCallback? onExecute;
 
-  const _BomResultCard({required this.plan});
+  const _BomResultCard({required this.plan, this.onExecute});
 
   @override
   Widget build(BuildContext context) {
@@ -1397,6 +1548,23 @@ class _BomResultCard extends StatelessWidget {
               ),
             ),
           ),
+          if (onExecute != null) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: plan.materials.any((m) => m.shortageQuantity > 0) ? null : onExecute,
+                icon: const Icon(Icons.precision_manufacturing),
+                label: const Text('Thực thi sản xuất'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
