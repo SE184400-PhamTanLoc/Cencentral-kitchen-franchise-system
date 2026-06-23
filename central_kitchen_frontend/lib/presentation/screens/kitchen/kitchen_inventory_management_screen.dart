@@ -1441,9 +1441,10 @@ class _BomTab extends StatelessWidget {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ],
+
                     ),
                   ),
                 ),
