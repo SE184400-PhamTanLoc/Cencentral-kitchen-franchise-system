@@ -54,11 +54,12 @@ public class ManagerService : IManagerService
                 OrderId = o.OrderId,
                 OrderCode = o.OrderCode,
                 StoreName = o.Store.StoreName,
-                StoreId = o.StoreId ?? 0,
+                StoreId = o.StoreId,
                 OrderStatus = o.OrderStatus ?? string.Empty,
                 TotalAmount = o.TotalAmount,
                 CreatedAt = o.CreatedAt ?? DateTime.UtcNow,
-                OrderDate = o.OrderDate ?? DateTime.UtcNow,
+                OrderDate = o.CreatedAt ?? DateTime.UtcNow,
+
                 Notes = o.Notes ?? string.Empty
             })
             .ToListAsync();

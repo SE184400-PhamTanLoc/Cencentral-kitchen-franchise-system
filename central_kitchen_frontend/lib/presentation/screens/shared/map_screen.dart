@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import '../../../business/providers/auth_provider.dart';
 import '../../../business/providers/delivery_chat_provider.dart';
 import '../../../business/providers/cart_order_provider.dart';
+import '../../../data/models/order_model.dart';
 import 'dart:ui';
+
 import '../../../core/constants/app_theme.dart';
 
 class MapScreen extends StatefulWidget {
@@ -166,12 +168,47 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  // Cấu hình màu sắc & nhãn trạng thái đơn hàng (giống Grab/Shopee)
+  static const Map<String, ({Color color, IconData icon, String label})> _statusConfig = {
+    'PENDING': (color: Color(0xFFF59E0B), icon: Icons.hourglass_top_rounded, label: 'Chờ duyệt'),
+    'APPROVED': (color: Color(0xFF0058BE), icon: Icons.check_circle_outline_rounded, label: 'Đã duyệt'),
+    'DISPATCHED': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
+    'DELIVERING': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
+    'SHIPPING': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
+    'COMPLETED': (color: Color(0xFF10B981), icon: Icons.task_alt_rounded, label: 'Đã nhận'),
+    'DELIVERED': (color: Color(0xFF10B981), icon: Icons.task_alt_rounded, label: 'Đã nhận'),
+    'CANCELLED': (color: Color(0xFFEF4444), icon: Icons.cancel_rounded, label: 'Đã hủy'),
+  };
+
+  ({Color color, IconData icon, String label}) _statusInfo(String status) {
+    return _statusConfig[status.toUpperCase()] ??
+        (color: AppTheme.onSurfaceVariant, icon: Icons.info_outline_rounded, label: status);
+  }
+
+  /// Sinh địa chỉ người nhận hiển thị (đơn hàng không kèm address nên dùng tên cửa hàng).
+  String _recipientAddress(OrderSummaryModel? order) {
+    if (order == null) return 'Chưa chọn đơn hàng';
+    final name = order.storeName.isNotEmpty ? order.storeName : 'Cửa hàng #${order.storeId}';
+    return '$name (Mã CH #${order.storeId})';
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final cart = context.watch<CartOrderProvider>();
     final deliveryChat = context.watch<DeliveryChatProvider>();
     final latestLoc = deliveryChat.latestLocation;
+
+    // Tìm đơn hàng đang được chọn để lấy trạng thái & địa chỉ người nhận
+    OrderSummaryModel? selectedOrder;
+    for (final o in cart.orders) {
+      if (o.orderId == _selectedOrderId) {
+        selectedOrder = o;
+        break;
+      }
+    }
+    final statusInfo = _statusInfo(selectedOrder?.orderStatus ?? 'PENDING');
+
 
     // Build markers for flutter_map
     final List<Marker> mapMarkers = [];
@@ -350,48 +387,86 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
 
-          // 3. Fallback coordinates display
-          if (latestLoc != null)
-            Positioned(
-              top: 90,
-              left: 16,
-              right: 16,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.secondary.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on_rounded, color: Colors.white),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Tài xế: ${latestLoc.driverName.isNotEmpty ? latestLoc.driverName : "N/A"}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
-                              ),
-                              Text(
-                                'Cập nhật: ${_formatTime(latestLoc.recordedAt)}',
-                                style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8)),
-                              ),
-                            ],
+          // 3. Thẻ thông tin đơn hàng (Trạng thái - Người nhận - Vị trí xe)
+          Positioned(
+            top: 86,
+            left: 16,
+            right: 16,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 8))
+                    ],
+                    border: Border.all(color: Colors.white.withOpacity(0.5)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Hàng 1: Trạng thái đơn hàng (chip màu)
+                      Row(
+                        children: [
+                          const Text(
+                            'Trạng thái đơn:',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.onSurfaceVariant),
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusInfo.color.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(statusInfo.icon, size: 14, color: statusInfo.color),
+                                const SizedBox(width: 4),
+                                Text(
+                                  statusInfo.label,
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: statusInfo.color),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 18),
+                      // Hàng 2: Địa chỉ người nhận
+                      _buildInfoRow(
+                        icon: Icons.storefront_rounded,
+                        iconColor: const Color(0xFFEF4444),
+                        title: 'Người nhận',
+                        content: _recipientAddress(selectedOrder),
+                      ),
+                      const SizedBox(height: 10),
+                      // Hàng 3: Vị trí hiện tại của xe giao hàng
+                      _buildInfoRow(
+                        icon: Icons.local_shipping_rounded,
+                        iconColor: AppTheme.secondary,
+                        title: 'Vị trí xe hiện tại',
+                        content: latestLoc != null
+                            ? '${latestLoc.latitude.toStringAsFixed(5)}, ${latestLoc.longitude.toStringAsFixed(5)}'
+                                '  •  ${_formatTime(latestLoc.recordedAt)}'
+                            : 'Chưa có dữ liệu GPS',
+                        subtitle: latestLoc != null && latestLoc.driverName.isNotEmpty
+                            ? 'Tài xế: ${latestLoc.driverName}'
+                            : null,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
+          ),
+
 
           // 4. Loader Overlay
           if (deliveryChat.isLocationLoading)
@@ -509,7 +584,55 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  /// Widget hiển thị một dòng thông tin (icon + tiêu đề + nội dung).
+  Widget _buildInfoRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String content,
+    String? subtitle,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: iconColor),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                content,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.onSurface),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant.withOpacity(0.8)),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   String _formatTime(DateTime? dt) {
+
     if (dt == null) return '--:--:--';
     final localDt = dt.toLocal();
     final hour = localDt.hour.toString().padLeft(2, '0');
