@@ -47,7 +47,7 @@ public class ManagerService : IManagerService
     {
         return await _context.Orders
             .Include(o => o.Store)
-            .Where(o => o.OrderStatus == "PENDING" || o.OrderStatus == "APPROVED" || o.OrderStatus == "DISPATCHED")
+            .Where(o => o.OrderStatus == "PENDING")
             .OrderByDescending(o => o.CreatedAt)
             .Select(o => new ManagerPendingOrderDto
             {
