@@ -28,6 +28,10 @@ class FranchiseEndpoints {
   static String dispatchOrder(int orderId) =>
       '/api/franchise/orders/$orderId/dispatch';
 
+  /// PUT /api/franchise/orders/{orderId}/arrive — Tài xế xác nhận giao tới nơi
+  static String arriveOrder(int orderId) =>
+      '/api/franchise/orders/$orderId/arrive';
+
   /// PUT /api/franchise/orders/{orderId}/reject — Manager từ chối đơn
   static String rejectOrder(int orderId) =>
       '/api/franchise/orders/$orderId/reject';

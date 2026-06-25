@@ -488,6 +488,38 @@ public class OrderService : IOrderService
         };
     }
 
+    public async Task<OrderStatusActionResponseDto> ArriveOrderAsync(int orderId, int arrivedByUserId)
+    {
+        var order = await _orderRepository.GetOrderByIdAsync(orderId)
+            ?? throw new InvalidOperationException($"Không tìm thấy đơn hàng ID={orderId}.");
+
+        var currentStatus = order.OrderStatus?.ToUpper() ?? "";
+        if (currentStatus != "DELIVERING" && currentStatus != "SHIPPING" && currentStatus != "DISPATCHED")
+            throw new InvalidOperationException(
+                $"Chỉ có thể cập nhật đã giao tới nơi cho đơn hàng ở trạng thái đang giao. Trạng thái hiện tại: '{order.OrderStatus}'.");
+
+        await _orderRepository.UpdateOrderStatusAsync(orderId, "SHIPPED");
+
+        try
+        {
+            await _notificationService.PushToUsersAsync(
+                new List<int> { order.CreatedBy },
+                "Đơn hàng đã đến nơi",
+                $"Đơn hàng {order.OrderCode} đã giao tới cửa hàng của bạn. Vui lòng xác nhận nhận hàng và kiểm kho."
+            );
+        }
+        catch { }
+
+        return new OrderStatusActionResponseDto
+        {
+            OrderId = order.OrderId,
+            OrderCode = order.OrderCode,
+            PreviousStatus = order.OrderStatus,
+            NewStatus = "SHIPPED",
+            Message = $"Đơn hàng {order.OrderCode} đã cập nhật trạng thái 'SHIPPED' (Giao tới nơi) thành công."
+        };
+    }
+
     // ==================== BỔ SUNG: TỪ CHỐI ĐƠN ====================
 
     public async Task<OrderStatusActionResponseDto> RejectOrderAsync(

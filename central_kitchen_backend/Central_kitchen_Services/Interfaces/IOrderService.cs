@@ -70,6 +70,11 @@ public interface IOrderService
     Task<OrderStatusActionResponseDto> DispatchOrderAsync(int orderId, int dispatchedByUserId);
 
     /// <summary>
+    /// Tài xế/Coordinator xác nhận đã giao hàng đến cửa hàng -> chuyển sang Shipped.
+    /// </summary>
+    Task<OrderStatusActionResponseDto> ArriveOrderAsync(int orderId, int arrivedByUserId);
+
+    /// <summary>
     /// Manager/Admin từ chối một đơn hàng Pending → chuyển sang Cancelled.
     /// Hoàn lại CurrentDebt và gửi notification cho cửa hàng franchise.
     /// </summary>

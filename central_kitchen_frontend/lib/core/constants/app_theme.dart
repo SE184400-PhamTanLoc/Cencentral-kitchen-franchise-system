@@ -17,7 +17,9 @@ class AppTheme {
   static const Color outline = Color(0xFF757682);
   static const Color outlineVariant = Color(0xFFC5C5D3);
   
-  static const Color error = Color(0xFFBA1A1A);
+  static const Color error = Color(0xFFEF4444);
+  static const Color success = Color(0xFF10B981);
+  static const Color warning = Color(0xFFF59E0B);
   static const Color onError = Color(0xFFFFFFFF);
   static const Color errorContainer = Color(0xFFFFDAD6);
 

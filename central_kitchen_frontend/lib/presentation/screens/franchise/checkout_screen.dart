@@ -31,23 +31,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final auth = context.read<AuthProvider>();
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       backgroundColor: AppTheme.background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: AppBar(
-              backgroundColor: AppTheme.background.withOpacity(0.7),
-              elevation: 0,
-              iconTheme: const IconThemeData(color: AppTheme.primary),
-              title: const Text(
-                'Xác nhận đơn hàng',
-                style: TextStyle(color: AppTheme.primary, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        ),
+        title: const Text(
+          'Xác nhận đơn hàng',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: Stack(

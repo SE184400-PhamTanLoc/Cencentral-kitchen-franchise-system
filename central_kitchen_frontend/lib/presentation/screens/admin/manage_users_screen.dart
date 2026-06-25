@@ -36,9 +36,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Quản lý Nhân viên', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: AppTheme.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Quản lý Nhân viên', style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppTheme.primary,
@@ -96,7 +101,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppTheme.outlineVariant),
+        side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       elevation: 0,
       child: Padding(
@@ -245,7 +250,7 @@ class _UserEditDialogState extends State<_UserEditDialog> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   
-  int _selectedRoleId = 2; // Default Role: Franchise Staff (2)
+  int _selectedRoleId = 3; // Default Role: Franchise Staff (3)
   int? _selectedKitchenId;
   int? _selectedStoreId;
   bool _isActive = true;
@@ -325,46 +330,56 @@ class _UserEditDialogState extends State<_UserEditDialog> {
 
               // Dropdown Chọn Vai trò (RoleId)
               DropdownButtonFormField<int>(
-                initialValue: _selectedRoleId,
+                isExpanded: true,
+                initialValue: const [1, 2, 3, 4, 5].contains(_selectedRoleId) ? _selectedRoleId : null,
                 decoration: const InputDecoration(labelText: 'Vai trò'),
                 items: const [
                   DropdownMenuItem(value: 1, child: Text('Admin')),
-                  DropdownMenuItem(value: 2, child: Text('Nhân viên Cửa hàng')),
-                  DropdownMenuItem(value: 3, child: Text('Nhân viên Bếp')),
-                  DropdownMenuItem(value: 4, child: Text('Điều phối cung ứng')),
+                  DropdownMenuItem(value: 2, child: Text('Quản lý chuỗi', overflow: TextOverflow.ellipsis)),
+                  DropdownMenuItem(value: 3, child: Text('Nhân viên Cửa hàng', overflow: TextOverflow.ellipsis)),
+                  DropdownMenuItem(value: 4, child: Text('Nhân viên Bếp', overflow: TextOverflow.ellipsis)),
+                  DropdownMenuItem(value: 5, child: Text('Điều phối cung ứng', overflow: TextOverflow.ellipsis)),
                 ],
                 onChanged: (val) {
                   if (val != null) {
                     setState(() {
                       _selectedRoleId = val;
                       // Reset các lựa chọn phụ thuộc khi đổi vai trò
-                      if (_selectedRoleId != 3) _selectedKitchenId = null;
-                      if (_selectedRoleId != 2) _selectedStoreId = null;
+                      if (_selectedRoleId != 4 && _selectedRoleId != 5) _selectedKitchenId = null;
+                      if (_selectedRoleId != 3) _selectedStoreId = null;
                     });
                   }
                 },
               ),
               const SizedBox(height: 12),
 
-              // Dropdown Chọn Bếp (Nếu vai trò là Nhân viên Bếp - RoleId = 3)
-              if (_selectedRoleId == 3)
+              // Dropdown Chọn Bếp (Nếu vai trò là Nhân viên Bếp - RoleId = 4 hoặc Điều phối cung ứng - RoleId = 5)
+              if (_selectedRoleId == 4 || _selectedRoleId == 5)
                 DropdownButtonFormField<int>(
-                  initialValue: _selectedKitchenId,
+                  isExpanded: true,
+                  initialValue: adminProv.kitchens.any((k) => k.kitchenId == _selectedKitchenId) ? _selectedKitchenId : null,
                   decoration: const InputDecoration(labelText: 'Chọn Bếp phân công'),
                   items: adminProv.kitchens.map((k) {
-                    return DropdownMenuItem(value: k.kitchenId, child: Text(k.kitchenName));
+                    return DropdownMenuItem(
+                      value: k.kitchenId,
+                      child: Text(k.kitchenName, overflow: TextOverflow.ellipsis),
+                    );
                   }).toList(),
                   onChanged: (val) => setState(() => _selectedKitchenId = val),
                   validator: (val) => val == null ? 'Vui lòng chọn bếp trung tâm' : null,
                 ),
 
-              // Dropdown Chọn Cửa hàng (Nếu vai trò là Nhân viên Cửa hàng - RoleId = 2)
-              if (_selectedRoleId == 2)
+              // Dropdown Chọn Cửa hàng (Nếu vai trò là Nhân viên Cửa hàng - RoleId = 3)
+              if (_selectedRoleId == 3)
                 DropdownButtonFormField<int>(
-                  initialValue: _selectedStoreId,
+                  isExpanded: true,
+                  initialValue: adminProv.stores.any((s) => s.storeId == _selectedStoreId) ? _selectedStoreId : null,
                   decoration: const InputDecoration(labelText: 'Chọn Cửa hàng phân công'),
                   items: adminProv.stores.map((s) {
-                    return DropdownMenuItem(value: s.storeId, child: Text(s.storeName));
+                    return DropdownMenuItem(
+                      value: s.storeId,
+                      child: Text(s.storeName, overflow: TextOverflow.ellipsis),
+                    );
                   }).toList(),
                   onChanged: (val) => setState(() => _selectedStoreId = val),
                   validator: (val) => val == null ? 'Vui lòng chọn cửa hàng franchise' : null,

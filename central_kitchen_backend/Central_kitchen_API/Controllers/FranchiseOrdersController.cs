@@ -286,6 +286,31 @@ public class FranchiseOrdersController : ControllerBase
     }
 
     // ============================================================
+    // BỔ SUNG — Tài xế/Coordinator xác nhận đã giao hàng tới cửa hàng
+    // PUT /api/franchise/orders/{orderId}/arrive
+    // Role: SUPPLY_COORDINATOR, MANAGER, ADMIN
+    // ============================================================
+    [HttpPut("orders/{orderId:int}/arrive")]
+    [Authorize(Roles = "SUPPLY_COORDINATOR,MANAGER,ADMIN")]
+    public async Task<IActionResult> ArriveOrder(int orderId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                       ?? User.FindFirst("sub")?.Value;
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { success = false, message = "Không xác định được người dùng." });
+
+        try
+        {
+            var result = await _orderService.ArriveOrderAsync(orderId, userId);
+            return Ok(new { success = true, message = result.Message, data = result });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    // ============================================================
     // BỔ SUNG — Lấy danh sách đơn hàng theo bếp trung tâm
     // GET /api/franchise/orders/kitchen/{kitchenId}?status=Pending
     // Role: MANAGER, KITCHEN_STAFF, ADMIN

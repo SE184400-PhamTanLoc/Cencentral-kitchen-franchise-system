@@ -239,8 +239,48 @@ class CartOrderProvider with ChangeNotifier {
         receivedItems: receivedItems,
         notes: notes,
       );
-      // Reload tồn kho sau khi nhận hàng
+      // Reload tồn kho và đơn hàng sau khi nhận hàng
       await loadStoreInventoryAsync(storeId);
+      await loadOrdersAsync(storeId);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setLoading(false);
+      _setError(_parseError(e));
+      return false;
+    }
+  }
+
+  /// Tài xế/Coordinator xác nhận giao tới nơi và reload orders.
+  Future<bool> arriveOrderAsync({
+    required int orderId,
+    required int storeId,
+  }) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _datasource.arriveOrder(orderId: orderId);
+      await loadOrdersAsync(storeId);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setLoading(false);
+      _setError(_parseError(e));
+      return false;
+    }
+  }
+
+  /// Hủy đơn hàng và reload orders.
+  Future<bool> cancelOrderAsync({
+    required int orderId,
+    required int storeId,
+    required String reason,
+  }) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _datasource.cancelOrder(orderId: orderId, reason: reason);
+      await loadOrdersAsync(storeId);
       _setLoading(false);
       return true;
     } catch (e) {

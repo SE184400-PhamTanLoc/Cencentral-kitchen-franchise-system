@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import '../../data/datasources/manager_datasource.dart';
 import '../../data/models/manager_stats_model.dart';
 import '../../data/models/chain_inventory_model.dart';
@@ -21,6 +22,11 @@ class ManagerProvider extends ChangeNotifier {
 
   List<ManagerPendingOrderModel> _pendingOrders = [];
   List<ManagerPendingOrderModel> get pendingOrders => _pendingOrders;
+
+  final Set<int> _processingOrderIds = {};
+  Set<int> get processingOrderIds => _processingOrderIds;
+
+  bool isOrderProcessing(int orderId) => _processingOrderIds.contains(orderId);
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
@@ -66,31 +72,51 @@ class ManagerProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> approveOrder(int orderId, String notes) async {
+  Future<String?> approveOrder(int orderId, String notes) async {
+    if (_processingOrderIds.contains(orderId)) return "Đang xử lý...";
+    _processingOrderIds.add(orderId);
+    notifyListeners();
     try {
       await _datasource.approveOrder(orderId, notes);
       _pendingOrders.removeWhere((o) => o.orderId == orderId);
       // Reload stats after action
       await loadDashboardData();
-      return true;
+      return null; // Success
     } catch (e) {
-      _errorMessage = e.toString();
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('message')) {
+          return data['message'].toString();
+        }
+      }
+      return e.toString();
+    } finally {
+      _processingOrderIds.remove(orderId);
       notifyListeners();
-      return false;
     }
   }
 
-  Future<bool> rejectOrder(int orderId, String notes) async {
+  Future<String?> rejectOrder(int orderId, String notes) async {
+    if (_processingOrderIds.contains(orderId)) return "Đang xử lý...";
+    _processingOrderIds.add(orderId);
+    notifyListeners();
     try {
       await _datasource.rejectOrder(orderId, notes);
       _pendingOrders.removeWhere((o) => o.orderId == orderId);
       // Reload stats after action
       await loadDashboardData();
-      return true;
+      return null; // Success
     } catch (e) {
-      _errorMessage = e.toString();
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('message')) {
+          return data['message'].toString();
+        }
+      }
+      return e.toString();
+    } finally {
+      _processingOrderIds.remove(orderId);
       notifyListeners();
-      return false;
     }
   }
 

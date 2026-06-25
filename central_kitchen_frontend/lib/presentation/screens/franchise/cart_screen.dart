@@ -18,39 +18,32 @@ class CartScreen extends StatelessWidget {
     return Consumer<CartOrderProvider>(
       builder: (context, cart, _) {
         return Scaffold(
-          extendBodyBehindAppBar: true,
           backgroundColor: AppTheme.background,
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(60),
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: AppBar(
-                  backgroundColor: AppTheme.background.withOpacity(0.7),
-                  elevation: 0,
-                  iconTheme: const IconThemeData(color: AppTheme.primary),
-                  title: const Text(
-                    'Giỏ Hàng của Bạn',
-                    style: TextStyle(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  actions: [
-                    if (!cart.isEmpty)
-                      TextButton.icon(
-                        onPressed: () => _confirmClearCart(context, cart),
-                        icon: const Icon(Icons.delete_sweep_rounded, color: AppTheme.error, size: 20),
-                        label: const Text(
-                          'Xóa sạch',
-                          style: TextStyle(color: AppTheme.error, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                  ],
-                ),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1E293B),
+            elevation: 0,
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(color: const Color(0xFFE2E8F0), height: 1),
+            ),
+            title: const Text(
+              'Giỏ Hàng của Bạn',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
               ),
             ),
+            actions: [
+              if (!cart.isEmpty)
+                TextButton.icon(
+                  onPressed: () => _confirmClearCart(context, cart),
+                  icon: const Icon(Icons.delete_sweep_rounded, color: AppTheme.error, size: 20),
+                  label: const Text(
+                    'Xóa sạch',
+                    style: TextStyle(color: AppTheme.error, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ),
+            ],
           ),
           body: Stack(
             children: [

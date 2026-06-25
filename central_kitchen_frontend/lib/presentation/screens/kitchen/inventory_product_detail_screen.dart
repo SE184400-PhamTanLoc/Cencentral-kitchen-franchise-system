@@ -41,10 +41,14 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppTheme.primary,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
-        title: const Text('Chi tiết nguyên liệu'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        ),
+        title: const Text('Chi tiết nguyên liệu', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             tooltip: 'Thêm lô mới',

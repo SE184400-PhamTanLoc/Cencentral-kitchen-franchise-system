@@ -8,6 +8,8 @@ import '../../../data/models/ingredient_model.dart';
 import '../../../data/models/pending_order_model.dart';
 import '../../../data/models/production_plan_model.dart';
 import 'inventory_product_detail_screen.dart';
+import '../../widgets/unified_order_card.dart';
+import '../../widgets/shared_order_details_modal.dart';
 
 class KitchenInventoryManagementScreen extends StatefulWidget {
   const KitchenInventoryManagementScreen({super.key});
@@ -259,8 +261,8 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
       appBar: AppBar(
         automaticallyImplyLeading: false,
         titleSpacing: 20,
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppTheme.primary,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
         toolbarHeight: 78,
         title: Column(
@@ -268,7 +270,7 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
           children: [
             Text(
               'Xin chào, ${auth.currentUser?.fullName ?? 'Nhân viên bếp'}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primary),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
             ),
             const SizedBox(height: 3),
             const Text(
@@ -313,9 +315,10 @@ class _KitchenInventoryManagementScreenState extends State<KitchenInventoryManag
           }
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primary,
-        unselectedItemColor: AppTheme.onSurfaceVariant,
-        elevation: 12,
+        selectedItemColor: const Color(0xFF00236F),
+        unselectedItemColor: const Color(0xFF64748B),
+        elevation: 0,
+        backgroundColor: Colors.white,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
@@ -403,9 +406,16 @@ class _OverviewTab extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(16),
               color: Colors.white,
-              border: Border.all(color: AppTheme.outlineVariant),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.015),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -803,21 +813,83 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Color statusBgColor = const Color(0xFFF1F5F9);
+    Color statusTextColor = const Color(0xFF64748B);
+    
+    final lowerTitle = title.toLowerCase();
+    final isLowStock = lowerTitle.contains('thấp') || lowerTitle.contains('tồn');
+    final isExpired = lowerTitle.contains('hạn') || lowerTitle.contains('expired');
+    final count = int.tryParse(value) ?? 0;
+
+    if (isLowStock) {
+      if (count > 0) {
+        statusBgColor = const Color(0xFFFFFBEB); // light warning (#F59E0B)
+        statusTextColor = const Color(0xFFF59E0B);
+      } else {
+        statusBgColor = const Color(0xFFECFDF5); // light success (#10B981)
+        statusTextColor = const Color(0xFF10B981);
+      }
+    } else if (isExpired) {
+      if (count > 0) {
+        statusBgColor = const Color(0xFFFEF2F2); // light error (#EF4444)
+        statusTextColor = const Color(0xFFEF4444);
+      } else {
+        statusBgColor = const Color(0xFFECFDF5); // light success (#10B981)
+        statusTextColor = const Color(0xFF10B981);
+      }
+    }
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppTheme.primary)),
-          const SizedBox(height: 4),
-          Text(title, style: const TextStyle(color: AppTheme.onSurfaceVariant)),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: statusBgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: statusTextColor, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                    fontFamily: 'Inter',
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primary,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -837,8 +909,15 @@ class _WorkflowCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -958,13 +1037,19 @@ class _FilterChips extends StatelessWidget {
               (item) => Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: ChoiceChip(
+                  showCheckmark: false,
                   label: Text(item.label),
                   selected: item.value == selected,
                   onSelected: (_) => onChanged(item.value),
                   selectedColor: AppTheme.primary.withOpacity(0.12),
-                  labelStyle: TextStyle(color: item.value == selected ? AppTheme.primary : AppTheme.onSurfaceVariant),
-                  side: const BorderSide(color: AppTheme.outlineVariant),
+                  labelStyle: TextStyle(
+                    color: item.value == selected ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: item.value == selected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  side: BorderSide(color: item.value == selected ? AppTheme.primary : const Color(0xFFE2E8F0)),
                   backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             )
@@ -986,13 +1071,20 @@ class _IngredientCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppTheme.outlineVariant),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.015),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -1000,17 +1092,13 @@ class _IngredientCard extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                gradient: LinearGradient(
-                  colors: [
-                    ingredient.isRawMaterial ? AppTheme.secondary : AppTheme.primaryContainer,
-                    AppTheme.primary,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                borderRadius: BorderRadius.circular(16),
+                color: AppTheme.primary.withOpacity(0.08),
               ),
-              child: Icon(ingredient.isRawMaterial ? Icons.grain_outlined : Icons.bakery_dining_outlined, color: Colors.white),
+              child: Icon(
+                ingredient.isRawMaterial ? Icons.grain_outlined : Icons.bakery_dining_outlined,
+                color: AppTheme.primary,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1022,7 +1110,7 @@ class _IngredientCard extends StatelessWidget {
                       Expanded(
                         child: Text(ingredient.name, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary)),
                       ),
-                      if (lowStock) const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
+                      if (lowStock) const Icon(Icons.warning_amber_rounded, color: AppTheme.warning, size: 18),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -1110,13 +1198,19 @@ class _BatchesTab extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: ChoiceChip(
+                  showCheckmark: false,
                   label: Text(item.$2),
                   selected: selected,
                   onSelected: (_) => onFilterChanged(item.$1),
                   selectedColor: AppTheme.primary.withOpacity(0.12),
-                  labelStyle: TextStyle(color: selected ? AppTheme.primary : AppTheme.onSurfaceVariant),
-                  side: const BorderSide(color: AppTheme.outlineVariant),
+                  labelStyle: TextStyle(
+                    color: selected ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  side: BorderSide(color: selected ? AppTheme.primary : const Color(0xFFE2E8F0)),
                   backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               );
             }).toList(),
@@ -1347,105 +1441,23 @@ class _BomTab extends StatelessWidget {
               if (pendingOrders.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 ...pendingOrders.map(
-                  (order) => Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.background,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.storefront_outlined, size: 20, color: AppTheme.onSurfaceVariant),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(order.storeName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  Text(
-                                    '${order.orderCode} • ${order.orderDetails.length} mặt hàng',
-                                    style: const TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                order.orderStatus,
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange.shade800),
-                              ),
-                            ),
-                            if (order.orderStatus.toUpperCase() == 'APPROVED') ...[
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: const Icon(Icons.local_shipping_outlined, color: AppTheme.primary),
-                                tooltip: 'Xuất kho giao hàng',
-                                onPressed: () => onDispatchOrder(order.orderId),
-                              ),
-                            ],
-                          ],
-                        ),
-                        if (order.orderDetails.isNotEmpty) ...[
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Divider(height: 1),
-                          ),
-                          ...order.orderDetails.map((detail) {
-                            IngredientModel? matching;
-                            for (final i in allIngredients) {
-                              if (i.ingredientId == detail.ingredientId) {
-                                matching = i;
-                                break;
-                              }
-                            }
-                            final double availableQty = matching?.availableQuantity ?? 0.0;
-                            final bool isShort = availableQty < detail.quantityOrdered;
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text('- ${detail.ingredientName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                                  ),
-                                  Text('${detail.quantityOrdered} ${detail.unit}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                  const SizedBox(width: 8),
-                                  if (isShort) ...[
-                                    ElevatedButton.icon(
-                                      onPressed: isLoading ? null : () => onCalculateProductBOM(detail.ingredientId, detail.quantityOrdered),
-                                      icon: const Icon(Icons.calculate_outlined, size: 14),
-                                      label: const Text('Tính BOM', style: TextStyle(fontSize: 11)),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red.withOpacity(0.1),
-                                        foregroundColor: Colors.red,
-                                        elevation: 0,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                                        minimumSize: const Size(60, 26),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                      ),
-                                    ),
-                                  ] else ...[
-                                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
-                                    const SizedBox(width: 4),
-                                    const Text('Đủ hàng', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.w600)),
-                                  ],
-                                ],
-                              ),
-                            );
-                          }),
-                        ],
-                      ],
-
-                    ),
+                  (order) => UnifiedOrderCard(
+                    orderId: order.orderId,
+                    orderCode: order.orderCode,
+                    storeName: order.storeName,
+                    orderStatus: order.orderStatus,
+                    createdAt: order.createdAt,
+                    totalAmount: 0.0,
+                    itemCount: order.orderDetails.length,
+                    onTap: () {
+                      SharedOrderDetailsModal.show(
+                        context,
+                        orderId: order.orderId,
+                        orderCode: order.orderCode,
+                        orderStatus: order.orderStatus,
+                        onRefresh: onRefreshPendingOrders,
+                      );
+                    },
                   ),
                 ),
               ],

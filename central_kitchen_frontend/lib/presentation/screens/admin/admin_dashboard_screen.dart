@@ -6,6 +6,11 @@ import '../../../../core/constants/app_theme.dart';
 import 'manage_users_screen.dart';
 import 'manage_stores_screen.dart';
 
+String _adminAvatarInitial(String? name) {
+  if (name == null || name.isEmpty) return '?';
+  return name.substring(0, 1).toUpperCase();
+}
+
 /// Màn hình Dashboard trung tâm của Admin.
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -27,6 +32,70 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
   }
 
+  Future<void> _logout(BuildContext context) async {
+    final auth = context.read<AuthProvider>();
+    await auth.logout();
+    if (!context.mounted) return;
+    Navigator.of(context).pushReplacementNamed('/login');
+  }
+
+  void _openUserMenu(BuildContext context) {
+    final auth = context.read<AuthProvider>();
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: AppTheme.primary,
+                    child: Text(
+                      _adminAvatarInitial(auth.currentUser?.fullName),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  title: Text(auth.currentUser?.fullName ?? 'Admin'),
+                  subtitle: Text(auth.currentUser?.roleName ?? 'System Admin'),
+                ),
+                const SizedBox(height: 8),
+                _AdminMenuTile(
+                  icon: Icons.chat_bubble_outline,
+                  title: 'Nhắn tin nội bộ',
+                  subtitle: 'Trao đổi với nhân viên',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    Navigator.of(context).pushNamed('/chat');
+                  },
+                ),
+                const SizedBox(height: 10),
+                _AdminMenuTile(
+                  icon: Icons.logout_outlined,
+                  title: 'Đăng xuất',
+                  subtitle: 'Thoát khỏi tài khoản hiện tại',
+                  danger: true,
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    await _logout(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProv = context.watch<AuthProvider>();
@@ -35,18 +104,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Admin Dashboard', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: AppTheme.primary,
+        automaticallyImplyLeading: false,
+        titleSpacing: 20,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        toolbarHeight: 78,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Xin chào, ${authProv.currentUser?.fullName ?? 'Admin'}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 3),
+            const Text(
+              'Quản trị hệ thống Central Kitchen',
+              style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_outlined, color: Colors.white),
-            tooltip: 'Đăng xuất',
-            onPressed: () async {
-              await authProv.logout();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
-              }
+            tooltip: 'Tải lại',
+            onPressed: () {
+              final adminProv = context.read<AdminProvider>();
+              adminProv.fetchUsers();
+              adminProv.fetchStores();
+              adminProv.fetchKitchens();
             },
+            icon: const Icon(Icons.refresh_outlined),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: () => _openUserMenu(context),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppTheme.primary,
+                child: Text(
+                  _adminAvatarInitial(authProv.currentUser?.fullName),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -55,17 +157,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- LỜI CHÀO ADMIN ---
-            Text(
-              'Xin chào, ${authProv.currentUser?.fullName ?? 'N/A'}',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primary),
-            ),
-            const Text(
-              'Chào mừng bạn đến với hệ thống quản trị Central Kitchen Pro.',
-              style: TextStyle(fontSize: 14, color: AppTheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 24),
-
             // --- THỐNG KÊ TỔNG QUAN ---
             Row(
               children: [
@@ -148,7 +239,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.outlineVariant),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -185,7 +276,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.outlineVariant),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Row(
           children: [
@@ -209,6 +300,56 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             ),
             const Icon(Icons.chevron_right, color: AppTheme.outline),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminMenuTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool danger;
+
+  const _AdminMenuTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = danger ? AppTheme.error : AppTheme.primary;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.1)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.5), size: 20),
           ],
         ),
       ),

@@ -102,17 +102,22 @@ class _ManagerCategoryScreenState extends State<ManagerCategoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý Danh mục & BOM'),
+        title: const Text('Quản lý Danh mục & BOM', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        ),
       ),
-      backgroundColor: const Color(0xFFF4F7FC),
+      backgroundColor: const Color(0xFFF8F9FB),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showIngredientForm(),
         icon: const Icon(Icons.add),
         label: const Text('Thêm mới'),
-        backgroundColor: const Color(0xFF2563EB),
+        backgroundColor: const Color(0xFF00236F),
+        foregroundColor: Colors.white,
       ),
       body: Consumer<ManagerCatalogProvider>(
         builder: (context, provider, child) {

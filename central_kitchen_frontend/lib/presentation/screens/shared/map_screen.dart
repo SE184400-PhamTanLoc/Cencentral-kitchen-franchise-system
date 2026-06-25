@@ -175,6 +175,7 @@ class _MapScreenState extends State<MapScreen> {
     'DISPATCHED': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
     'DELIVERING': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
     'SHIPPING': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
+    'SHIPPED': (color: Color(0xFF047857), icon: Icons.done_all_rounded, label: 'Đã tới nơi'),
     'COMPLETED': (color: Color(0xFF10B981), icon: Icons.task_alt_rounded, label: 'Đã nhận'),
     'DELIVERED': (color: Color(0xFF10B981), icon: Icons.task_alt_rounded, label: 'Đã nhận'),
     'CANCELLED': (color: Color(0xFFEF4444), icon: Icons.cancel_rounded, label: 'Đã hủy'),
@@ -208,6 +209,13 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
     final statusInfo = _statusInfo(selectedOrder?.orderStatus ?? 'PENDING');
+    final statusUpper = selectedOrder?.orderStatus.toUpperCase() ?? '';
+    final isDelivering = statusUpper == 'DELIVERING' || statusUpper == 'SHIPPING' || statusUpper == 'DISPATCHED';
+    final isDriver = auth.userRole == 'SUPPLY_COORDINATOR' || auth.userRole == 'KITCHEN_STAFF' || auth.userRole == 'MANAGER' || auth.userRole == 'ADMIN';
+    final hasArrived = (_currentMockStep == _mockRoute.length - 1) ||
+        (latestLoc != null &&
+            (latestLoc.latitude - _mockRoute.last.latitude).abs() < 0.001 &&
+            (latestLoc.longitude - _mockRoute.last.longitude).abs() < 0.001);
 
 
     // Build markers for flutter_map
@@ -373,6 +381,7 @@ class _MapScreenState extends State<MapScreen> {
                                     if (val != null) {
                                       setState(() {
                                         _selectedOrderId = val;
+                                        _currentMockStep = 0;
                                       });
                                       _startMonitoring();
                                     }
@@ -530,6 +539,56 @@ class _MapScreenState extends State<MapScreen> {
                         icon: Icon(_isTracking ? Icons.gps_off_rounded : Icons.gps_fixed_rounded, color: Colors.white),
                         label: Text(_isTracking ? 'DỪNG PHÁT GPS' : 'PHÁT GPS THỰC TẾ', style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                       ),
+                      if (isDriver && isDelivering) ...[
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: cart.isLoading
+                              ? null
+                              : () async {
+                                  if (!hasArrived) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Vui lòng di chuyển xe đến cột mốc Cửa hàng (CH) trên bản đồ trước khi xác nhận!'),
+                                        backgroundColor: Colors.amber,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  final success = await cart.arriveOrderAsync(
+                                    orderId: _selectedOrderId!,
+                                    storeId: selectedOrder!.storeId,
+                                  );
+                                  if (mounted) {
+                                    if (success) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Xác nhận giao hàng tới nơi thành công! Trạng thái: SHIPPED.'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(cart.errorMessage ?? 'Cập nhật thất bại.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                            backgroundColor: hasArrived ? Colors.orange.shade800 : Colors.grey.shade500,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
+                          ),
+                          icon: Icon(hasArrived ? Icons.done_all_rounded : Icons.location_off_rounded, color: Colors.white),
+                          label: Text(
+                            hasArrived ? 'XÁC NHẬN ĐÃ ĐẾN CỬA HÀNG' : 'VUI LÒNG DI CHUYỂN TỚI CỬA HÀNG',
+                            style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.white),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
 
                       // Manual Step-by-Step simulator

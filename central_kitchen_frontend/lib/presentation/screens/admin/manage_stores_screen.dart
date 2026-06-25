@@ -35,14 +35,17 @@ class _ManageStoresScreenState extends State<ManageStoresScreen> {
       child: Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(
-          title: const Text('Cửa hàng & Bếp trung tâm', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          backgroundColor: AppTheme.primary,
-          iconTheme: const IconThemeData(color: Colors.white),
-          bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: AppTheme.outlineVariant,
-            indicatorColor: Colors.white,
-            tabs: [
+          title: const Text('Cửa hàng & Bếp trung tâm', style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFF1E293B),
+          elevation: 0,
+          bottom: TabBar(
+            labelColor: const Color(0xFF1E293B),
+            unselectedLabelColor: const Color(0xFF64748B),
+            indicatorColor: AppTheme.primary,
+            indicatorWeight: 2.5,
+            dividerColor: const Color(0xFFE2E8F0),
+            tabs: const [
               Tab(text: 'Cửa hàng Franchise', icon: Icon(Icons.store_mall_directory_outlined)),
               Tab(text: 'Bếp trung tâm', icon: Icon(Icons.kitchen_outlined)),
             ],

@@ -22,7 +22,7 @@ public class ManagerService : IManagerService
     {
         var totalStores = await _context.Stores.CountAsync();
         var pendingOrders = await _context.Orders.CountAsync(o => o.OrderStatus == "PENDING");
-        var dispatchedOrders = await _context.Orders.CountAsync(o => o.OrderStatus == "DISPATCHED");
+        var dispatchedOrders = await _context.Orders.CountAsync(o => o.OrderStatus == "DELIVERING" || o.OrderStatus == "SHIPPING" || o.OrderStatus == "DISPATCHED");
         var approvedOrders = await _context.Orders.CountAsync(o => o.OrderStatus == "APPROVED");
         var totalDebt = await _context.Stores.SumAsync(s => (decimal?)s.CurrentDebt) ?? 0;
         
@@ -47,7 +47,7 @@ public class ManagerService : IManagerService
     {
         return await _context.Orders
             .Include(o => o.Store)
-            .Where(o => o.OrderStatus == "PENDING" || o.OrderStatus == "APPROVED" || o.OrderStatus == "DISPATCHED")
+            .Where(o => o.OrderStatus == "PENDING" || o.OrderStatus == "APPROVED" || o.OrderStatus == "DELIVERING" || o.OrderStatus == "SHIPPING" || o.OrderStatus == "DISPATCHED")
             .OrderByDescending(o => o.CreatedAt)
             .Select(o => new ManagerPendingOrderDto
             {

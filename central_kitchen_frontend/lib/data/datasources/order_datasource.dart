@@ -68,8 +68,32 @@ class OrderDatasource {
     final response = await _apiClient.put(
       FranchiseEndpoints.receiveOrder(orderId),
       data: {
-        'receivedItems': ?receivedItems,
-        'notes': ?notes,
+        if (receivedItems != null) 'receivedItems': receivedItems,
+        if (notes != null) 'notes': notes,
+      },
+    );
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  /// Tài xế/Coordinator xác nhận giao tới nơi.
+  Future<Map<String, dynamic>> arriveOrder({
+    required int orderId,
+  }) async {
+    final response = await _apiClient.put(
+      FranchiseEndpoints.arriveOrder(orderId),
+    );
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  /// Hủy đơn hàng (Pending only)
+  Future<Map<String, dynamic>> cancelOrder({
+    required int orderId,
+    required String reason,
+  }) async {
+    final response = await _apiClient.put(
+      FranchiseEndpoints.cancelOrder(orderId),
+      data: {
+        'reason': reason,
       },
     );
     return Map<String, dynamic>.from(response.data as Map);
@@ -91,7 +115,7 @@ class OrderDatasource {
       data: {
         'storeId': storeId,
         'consumeType': consumeType,
-        'reason': ?reason,
+        if (reason != null) 'reason': reason,
         if (consumeDate != null)
           'consumeDate': consumeDate.toIso8601String(),
         'items': items.map((e) => e.toJson()).toList(),

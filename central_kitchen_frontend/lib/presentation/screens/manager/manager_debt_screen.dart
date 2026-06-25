@@ -26,15 +26,28 @@ class _ManagerDebtScreenState extends State<ManagerDebtScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cập nhật hạn mức công nợ'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cập nhật hạn mức công nợ', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
         content: TextField(
           controller: ctrl,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Hạn mức mới (VNĐ)'),
+          decoration: InputDecoration(
+            labelText: 'Hạn mức mới (VNĐ)',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF00236F), width: 2),
+            ),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B)))),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00236F),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () async {
               final newLimit = double.tryParse(ctrl.text);
               if (newLimit != null) {
@@ -62,18 +75,23 @@ class _ManagerDebtScreenState extends State<ManagerDebtScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý Công nợ'),
+        title: const Text('Quản lý Công nợ', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        ),
       ),
-      backgroundColor: const Color(0xFFF4F7FC),
+      backgroundColor: const Color(0xFFF8F9FB),
       body: Consumer<ManagerProvider>(
         builder: (context, provider, child) {
           if (provider.isLoadingStores) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF00236F)));
           }
           if (provider.errorMessage != null && provider.stores.isEmpty) {
-            return Center(child: Text('Lỗi: ${provider.errorMessage}'));
+            return Center(child: Text('Lỗi: ${provider.errorMessage}', style: const TextStyle(color: Color(0xFF64748B))));
           }
 
           return ListView.builder(
@@ -82,40 +100,86 @@ class _ManagerDebtScreenState extends State<ManagerDebtScreen> {
             itemBuilder: (context, index) {
               final store = provider.stores[index];
               final debtRatio = store.creditLimit > 0 ? (store.currentDebt / store.creditLimit) : 0.0;
-              final color = debtRatio > 0.8 ? Colors.red : (debtRatio > 0.5 ? Colors.orange : Colors.green);
+              final color = debtRatio > 0.8 ? const Color(0xFFEF4444) : (debtRatio > 0.5 ? const Color(0xFFF59E0B) : const Color(0xFF10B981));
+              final bgTint = debtRatio > 0.8 ? const Color(0xFFFEF2F2) : (debtRatio > 0.5 ? const Color(0xFFFFFBEB) : const Color(0xFFECFDF5));
 
-              return Card(
+              return Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.015),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
                             store.storeName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () => _showUpdateLimitDialog(store.storeId, store.creditLimit),
+                        ),
+                        InkWell(
+                          onTap: () => _showUpdateLimitDialog(store.storeId, store.creditLimit),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.edit_outlined, color: Color(0xFF64748B), size: 18),
                           ),
-                        ],
-                      ),
-                      Text('Nợ hiện tại: ${formatCurrency.format(store.currentDebt)}', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text('Hạn mức: ${formatCurrency.format(store.creditLimit)}'),
-                      const SizedBox(height: 12),
-                      LinearProgressIndicator(
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('NỢ HIỆN TẠI', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 0.5, color: Color(0xFF757682))),
+                              const SizedBox(height: 4),
+                              Text(formatCurrency.format(store.currentDebt), style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15)),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text('HẠN MỨC', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 0.5, color: Color(0xFF757682))),
+                              const SizedBox(height: 4),
+                              Text(formatCurrency.format(store.creditLimit), style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 15)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
                         value: debtRatio.clamp(0.0, 1.0).toDouble(),
                         color: color,
-                        backgroundColor: Colors.grey[200],
+                        backgroundColor: bgTint,
+                        minHeight: 8,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             },

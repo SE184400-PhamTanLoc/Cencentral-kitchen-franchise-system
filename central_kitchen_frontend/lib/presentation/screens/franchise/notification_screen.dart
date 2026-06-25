@@ -25,31 +25,26 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final notifProvider = context.watch<NotificationProvider>();
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       backgroundColor: AppTheme.background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: AppBar(
-              backgroundColor: AppTheme.background.withOpacity(0.7),
-              elevation: 0,
-              iconTheme: const IconThemeData(color: AppTheme.primary),
-              title: const Text('Thông báo', style: TextStyle(color: AppTheme.primary, fontSize: 18, fontWeight: FontWeight.bold)),
-              actions: [
-                if (notifProvider.hasUnread)
-                  TextButton.icon(
-                    onPressed: () {
-                      notifProvider.markAllAsReadAsync();
-                    },
-                    icon: const Icon(Icons.done_all_rounded, color: AppTheme.primary, size: 18),
-                    label: const Text('Đọc tất cả', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 13)),
-                  ),
-              ],
-            ),
-          ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
         ),
+        title: const Text('Thông báo', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          if (notifProvider.hasUnread)
+            TextButton.icon(
+              onPressed: () {
+                notifProvider.markAllAsReadAsync();
+              },
+              icon: const Icon(Icons.done_all_rounded, color: AppTheme.primary, size: 18),
+              label: const Text('Đọc tất cả', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
+        ],
       ),
       body: Stack(
         children: [

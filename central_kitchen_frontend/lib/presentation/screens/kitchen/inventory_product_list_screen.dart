@@ -29,10 +29,14 @@ class _InventoryProductListScreenState extends State<InventoryProductListScreen>
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Danh sách nguyên liệu'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppTheme.primary,
+        title: const Text('Danh sách nguyên liệu', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_outlined),
@@ -243,13 +247,19 @@ class _FilterRow extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(right: 10),
             child: ChoiceChip(
+              showCheckmark: false,
               label: Text(item.label),
               selected: selected,
               onSelected: (_) => onChanged(item.value),
               selectedColor: AppTheme.primary.withOpacity(0.12),
-              labelStyle: TextStyle(color: selected ? AppTheme.primary : AppTheme.onSurfaceVariant),
-              side: const BorderSide(color: AppTheme.outlineVariant),
+              labelStyle: TextStyle(
+                color: selected ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              ),
+              side: BorderSide(color: selected ? AppTheme.primary : const Color(0xFFE2E8F0)),
               backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           );
         }).toList(),

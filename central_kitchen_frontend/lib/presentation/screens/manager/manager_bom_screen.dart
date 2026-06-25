@@ -139,11 +139,16 @@ class _ManagerBomScreenState extends State<ManagerBomScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cấu hình BOM: ${widget.ingredient.name}'),
+        title: Text('Cấu hình BOM: ${widget.ingredient.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        ),
       ),
-      backgroundColor: const Color(0xFFF4F7FC),
+      backgroundColor: const Color(0xFFF8F9FB),
       body: Column(
         children: [
           Expanded(
@@ -153,11 +158,17 @@ class _ManagerBomScreenState extends State<ManagerBomScreen> {
               itemBuilder: (context, index) {
                 final item = _selectedInputs[index];
                 return Card(
+                  color: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
                   child: ListTile(
-                    title: Text(item['inputIngredientName']),
-                    subtitle: Text('Định mức: ${item['quantityRequired']}'),
+                    title: Text(item['inputIngredientName'], style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                    subtitle: Text('Định mức: ${item['quantityRequired']}', style: const TextStyle(color: Color(0xFF64748B))),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
                       onPressed: () {
                         setState(() {
                           _selectedInputs.removeAt(index);
@@ -171,7 +182,10 @@ class _ManagerBomScreenState extends State<ManagerBomScreen> {
           ),
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.white,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -179,6 +193,12 @@ class _ManagerBomScreenState extends State<ManagerBomScreen> {
                     onPressed: _addInputIngredient,
                     icon: const Icon(Icons.add),
                     label: const Text('Thêm nguyên liệu'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF00236F),
+                      side: const BorderSide(color: Color(0xFF00236F)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -187,7 +207,12 @@ class _ManagerBomScreenState extends State<ManagerBomScreen> {
                     onPressed: _saveBOM,
                     icon: const Icon(Icons.save),
                     label: const Text('Lưu BOM'),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16A34A), foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00236F),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
                   ),
                 ),
               ],

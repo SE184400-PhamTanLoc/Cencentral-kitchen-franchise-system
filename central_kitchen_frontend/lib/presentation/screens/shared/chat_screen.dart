@@ -6,7 +6,8 @@ import '../../../business/providers/delivery_chat_provider.dart';
 import '../../../core/constants/app_theme.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final bool showBackButton;
+  const ChatScreen({super.key, this.showBackButton = true});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -19,21 +20,22 @@ class _ChatScreenState extends State<ChatScreen> {
   int? _selectedStoreId;
   int? _selectedKitchenId;
   bool _isInit = true;
+  late DeliveryChatProvider _chatProvider;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _chatProvider = Provider.of<DeliveryChatProvider>(context, listen: false);
     if (_isInit) {
       final auth = context.read<AuthProvider>();
-      final deliveryChat = context.read<DeliveryChatProvider>();
       
       // Setup default IDs based on roles
       if (auth.userRole == 'KITCHEN_STAFF') {
         _selectedKitchenId = auth.kitchenId ?? 1;
-        deliveryChat.fetchStoresAndKitchens().then((_) {
-          if (deliveryChat.storesList.isNotEmpty) {
+        _chatProvider.fetchStoresAndKitchens().then((_) {
+          if (_chatProvider.storesList.isNotEmpty) {
             setState(() {
-              _selectedStoreId = deliveryChat.storesList.first['storeId'] as int?;
+              _selectedStoreId = _chatProvider.storesList.first['storeId'] as int?;
             });
             _startConversation();
           }
@@ -49,17 +51,15 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startConversation() {
-    final chatProvider = context.read<DeliveryChatProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      chatProvider.loadConversationAsync(_selectedStoreId, _selectedKitchenId).then((_) => _scrollToBottom());
-      chatProvider.startChatPolling(_selectedStoreId, _selectedKitchenId);
+      _chatProvider.loadConversationAsync(_selectedStoreId, _selectedKitchenId).then((_) => _scrollToBottom());
+      _chatProvider.startChatPolling(_selectedStoreId, _selectedKitchenId);
     });
   }
 
   @override
   void dispose() {
-    final chatProvider = context.read<DeliveryChatProvider>();
-    chatProvider.stopChatPolling();
+    _chatProvider.stopChatPolling();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -112,6 +112,7 @@ class _ChatScreenState extends State<ChatScreen> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: AppBar(
+              automaticallyImplyLeading: widget.showBackButton,
               backgroundColor: AppTheme.primary.withOpacity(0.85),
               elevation: 0,
               iconTheme: const IconThemeData(color: Colors.white),
