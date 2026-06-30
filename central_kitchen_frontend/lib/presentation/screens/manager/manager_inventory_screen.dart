@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../business/providers/manager_provider.dart';
 import '../../../core/constants/app_theme.dart';
+import '../../widgets/ingredient_image_helper.dart';
 
 class ManagerInventoryScreen extends StatefulWidget {
   const ManagerInventoryScreen({super.key});
@@ -66,9 +67,34 @@ class _ManagerInventoryScreenState extends State<ManagerInventoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.ingredientName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                    Row(
+                      children: [
+                        buildIngredientPreview(
+                          null,
+                          item.ingredientName,
+                          size: 40,
+                          borderRadius: 12,
+                          fallback: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00236F).withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.inventory_2_outlined,
+                              color: Color(0xFF00236F),
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            item.ingredientName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                          ),
+                        ),
+                      ],
                     ),
                     const Divider(height: 20, color: Color(0xFFE2E8F0)),
                     Row(

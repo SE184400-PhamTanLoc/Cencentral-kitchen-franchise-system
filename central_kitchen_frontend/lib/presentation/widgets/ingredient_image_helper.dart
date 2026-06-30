@@ -5,6 +5,16 @@ String? getIngredientImage(String? sku, String name) {
   final cleanName = name.toLowerCase().trim();
   final cleanSku = sku?.toUpperCase().trim() ?? '';
   
+  if (cleanSku == 'FIN-SAUCE' || 
+      cleanName.contains('sốt bơ trứng') || 
+      cleanName.contains('sot bo trung') || 
+      cleanName.contains('sốt bơ') || 
+      cleanName.contains('sot bo') || 
+      cleanName.contains('sốt') || 
+      cleanName.contains('sot')) {
+    return 'assets/images/sotbotrung.jpg';
+  }
+  
   if (cleanSku == 'RAW-FLOUR' || cleanName.contains('bột mì')) {
     return 'assets/images/bot-mi-la-gi.jpg';
   }
@@ -46,9 +56,6 @@ String? getIngredientImage(String? sku, String name) {
   }
   if (cleanSku == 'RAW-VEG' || cleanName.contains('dưa leo') || cleanName.contains('rau thơm') || cleanName.contains('rau')) {
     return 'assets/images/dualeo.jpg';
-  }
-  if (cleanSku == 'FIN-SAUCE' || cleanName.contains('sốt bơ trứng') || cleanName.contains('sốt')) {
-    return 'assets/images/sotbotrung.jpg';
   }
   if (cleanSku == 'FIN-BMPC' || cleanName.contains('pate chả lụa')) {
     return 'assets/images/banh-mi-pate-cha-lua.jpg';

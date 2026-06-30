@@ -6,6 +6,7 @@ import '../../../core/constants/app_theme.dart';
 import '../../../data/models/batch_model.dart';
 import '../../../data/models/ingredient_model.dart';
 import '../../../data/models/production_plan_model.dart';
+import '../../widgets/ingredient_image_helper.dart';
 
 class InventoryProductDetailScreen extends StatefulWidget {
   final IngredientModel ingredient;
@@ -484,24 +485,42 @@ class _HeaderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  ingredient.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
+              buildIngredientPreview(
+                ingredient.sku,
+                ingredient.name,
+                size: 56,
+                borderRadius: 16,
+                fallback: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    ingredient.isRawMaterial ? Icons.grain_outlined : Icons.bakery_dining_outlined,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
               ),
-              if (ingredient.isRawMaterial)
-                const Chip(
-                  label: Text('RAW'),
-                  backgroundColor: Colors.white,
-                  labelStyle: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700),
-                )
-              else
-                const Chip(
-                  label: Text('BFP'),
-                  backgroundColor: Colors.white,
-                  labelStyle: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ingredient.name,
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      ingredient.isRawMaterial ? 'Nguyên liệu thô (RAW)' : 'Bán thành phẩm (BFP)',
+                      style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
+              ),
             ],
           ),
           const SizedBox(height: 10),

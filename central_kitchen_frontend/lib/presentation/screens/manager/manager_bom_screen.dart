@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../business/providers/manager_catalog_provider.dart';
 import '../../../core/constants/app_theme.dart';
 import '../../../data/models/ingredient_model.dart';
+import '../../widgets/ingredient_image_helper.dart';
 
 class ManagerBomScreen extends StatefulWidget {
   final IngredientModel ingredient;
@@ -397,6 +398,90 @@ class _ManagerBomScreenState extends State<ManagerBomScreen> {
       backgroundColor: const Color(0xFFF8F9FB),
       body: Column(
         children: [
+          // Premium Output Ingredient Card
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Row(
+              children: [
+                buildIngredientPreview(
+                  widget.ingredient.sku,
+                  widget.ingredient.name,
+                  size: 64,
+                  borderRadius: 16,
+                  fallback: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00236F).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.restaurant_menu_outlined,
+                      color: Color(0xFF00236F),
+                      size: 32,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.ingredient.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Mã SKU: ${widget.ingredient.sku} | Đơn vị: ${widget.ingredient.unit}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00236F).withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Thành phẩm BOM',
+                              style: TextStyle(
+                                color: Color(0xFF00236F),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: _selectedInputs.isEmpty
                 ? Center(
@@ -439,16 +524,22 @@ class _ManagerBomScreenState extends State<ManagerBomScreen> {
                             child: Row(
                               children: [
                                 // Trái
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.secondary.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.grain_outlined,
-                                    color: AppTheme.secondary,
-                                    size: 24,
+                                buildIngredientPreview(
+                                  null,
+                                  item['inputIngredientName'],
+                                  size: 40,
+                                  borderRadius: 12,
+                                  fallback: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.secondary.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.grain_outlined,
+                                      color: AppTheme.secondary,
+                                      size: 24,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 14),

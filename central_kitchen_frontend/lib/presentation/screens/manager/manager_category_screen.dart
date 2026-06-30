@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../business/providers/manager_catalog_provider.dart';
 import '../../../data/models/ingredient_model.dart';
+import '../../widgets/ingredient_image_helper.dart';
 import 'manager_bom_screen.dart';
 
 class ManagerCategoryScreen extends StatefulWidget {
@@ -345,18 +346,24 @@ class _ManagerCategoryScreenState extends State<ManagerCategoryScreen> {
                       dividerColor: Colors.transparent,
                     ),
                     child: ExpansionTile(
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: item.isRawMaterial 
-                              ? Colors.green.withOpacity(0.08)
-                              : const Color(0xFF00236F).withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          item.isRawMaterial ? Icons.eco_outlined : Icons.restaurant_menu_outlined,
-                          color: item.isRawMaterial ? Colors.green : const Color(0xFF00236F),
-                          size: 24,
+                      leading: buildIngredientPreview(
+                        item.sku,
+                        item.name,
+                        size: 40,
+                        borderRadius: 12,
+                        fallback: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: item.isRawMaterial 
+                                ? Colors.green.withOpacity(0.08)
+                                : const Color(0xFF00236F).withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            item.isRawMaterial ? Icons.eco_outlined : Icons.restaurant_menu_outlined,
+                            color: item.isRawMaterial ? Colors.green : const Color(0xFF00236F),
+                            size: 24,
+                          ),
                         ),
                       ),
                       title: Row(
