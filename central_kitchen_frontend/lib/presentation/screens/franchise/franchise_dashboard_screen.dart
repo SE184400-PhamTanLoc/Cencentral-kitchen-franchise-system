@@ -11,6 +11,7 @@ import 'cart_screen.dart';
 import 'notification_screen.dart';
 import '../../widgets/unified_order_card.dart';
 import '../../widgets/shared_order_details_modal.dart';
+import '../../widgets/ingredient_image_helper.dart';
 
 class FranchiseDashboardScreen extends StatefulWidget {
   const FranchiseDashboardScreen({super.key});
@@ -76,7 +77,7 @@ class _FranchiseDashboardScreenState extends State<FranchiseDashboardScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: AppTheme.primaryContainer,
                     child: Text(
                       auth.currentUser?.fullName.substring(0, 1).toUpperCase() ?? 'F',
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -139,12 +140,13 @@ class _FranchiseDashboardScreenState extends State<FranchiseDashboardScreen> {
         scrolledUnderElevation: 0,
         elevation: 0,
         toolbarHeight: 78,
+        centerTitle: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Xin chào, ${auth.currentUser?.fullName ?? 'Nhân viên'}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primary),
             ),
             const SizedBox(height: 3),
             Text(
@@ -191,7 +193,7 @@ class _FranchiseDashboardScreenState extends State<FranchiseDashboardScreen> {
               padding: const EdgeInsets.only(right: 20),
               child: CircleAvatar(
                 radius: 18,
-                backgroundColor: AppTheme.primary,
+                backgroundColor: AppTheme.primaryContainer,
                 child: Text(
                   auth.currentUser?.fullName.substring(0, 1).toUpperCase() ?? 'F',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -200,35 +202,45 @@ class _FranchiseDashboardScreenState extends State<FranchiseDashboardScreen> {
             ),
           ),
         ],
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.outlineVariant, width: 1),
+        ),
       ),
       body: IndexedStack(
         index: _selectedIndex,
         children: _tabs,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-        backgroundColor: Colors.white,
-        elevation: 8,
-        indicatorColor: AppTheme.primary.withOpacity(0.08),
-        height: 64,
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.add_shopping_cart_outlined, color: AppTheme.primary.withOpacity(0.6)),
-            selectedIcon: const Icon(Icons.add_shopping_cart, color: AppTheme.primary),
-            label: 'Đặt hàng',
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: AppTheme.outlineVariant, width: 1),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined, color: AppTheme.primary.withOpacity(0.6)),
-            selectedIcon: const Icon(Icons.receipt_long, color: AppTheme.primary),
-            label: 'Lịch sử',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.warehouse_outlined, color: AppTheme.primary.withOpacity(0.6)),
-            selectedIcon: const Icon(Icons.warehouse, color: AppTheme.primary),
-            label: 'Kho & Tiêu thụ',
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          indicatorColor: AppTheme.primary.withOpacity(0.08),
+          height: 64,
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Icons.add_shopping_cart_outlined, color: AppTheme.primary.withOpacity(0.6)),
+              selectedIcon: const Icon(Icons.add_shopping_cart, color: AppTheme.primary),
+              label: 'Đặt hàng',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined, color: AppTheme.primary.withOpacity(0.6)),
+              selectedIcon: const Icon(Icons.receipt_long, color: AppTheme.primary),
+              label: 'Lịch sử',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.warehouse_outlined, color: AppTheme.primary.withOpacity(0.6)),
+              selectedIcon: const Icon(Icons.warehouse, color: AppTheme.primary),
+              label: 'Kho & Tiêu thụ',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -563,7 +575,7 @@ class _OrderTabState extends State<_OrderTab> {
                   physics: const BouncingScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.85,
+                    childAspectRatio: 0.74,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
@@ -700,18 +712,28 @@ class _IngredientCard extends StatelessWidget {
         children: [
           // Header placeholder container
           Container(
-            height: 70,
+            height: 95,
+            width: double.infinity,
             decoration: const BoxDecoration(
               color: Color(0xFFF8F9FB),
               borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
             ),
-            child: Center(
-              child: Icon(
-                Icons.inventory_2_rounded,
-                size: 28,
-                color: isInCart ? AppTheme.secondary : const Color(0xFF64748B),
-              ),
-            ),
+            child: (() {
+              final imagePath = getIngredientImage(null, name);
+              if (imagePath != null) {
+                return ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                  child: Image.asset(imagePath, fit: BoxFit.cover),
+                );
+              }
+              return Center(
+                child: Icon(
+                  Icons.inventory_2_rounded,
+                  size: 28,
+                  color: isInCart ? AppTheme.secondary : const Color(0xFF64748B),
+                ),
+              );
+            })(),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -1238,15 +1260,26 @@ class _InventoryTabState extends State<_InventoryTab> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: (isLowStock ? AppTheme.error : AppTheme.primary).withOpacity(0.08),
-                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
-                            child: Icon(
-                              Icons.inventory_2_rounded,
-                              color: isLowStock ? AppTheme.error : AppTheme.primary,
-                              size: 20,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: buildIngredientPreview(
+                                inv.sku,
+                                inv.ingredientName,
+                                size: 44,
+                                borderRadius: 10,
+                                fallback: Icon(
+                                  Icons.inventory_2_rounded,
+                                  color: isLowStock ? AppTheme.error : AppTheme.primary,
+                                  size: 20,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -1578,10 +1611,34 @@ class _ConsumeBottomSheetState extends State<_ConsumeBottomSheet> {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Row(
                           children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: buildIngredientPreview(
+                                  inv.sku,
+                                  inv.ingredientName,
+                                  size: 36,
+                                  borderRadius: 8,
+                                  fallback: const Icon(
+                                    Icons.inventory_2_rounded,
+                                    color: AppTheme.primary,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 inv.ingredientName,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.onSurface),
                               ),
                             ),
                             const SizedBox(width: 8),

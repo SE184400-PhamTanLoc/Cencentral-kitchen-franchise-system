@@ -200,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 4),
                       Center(
                         child: Text(
-                          'Logistics & Supply Chain Management',
+                          'Quản lý Logistics & Chuỗi cung ứng',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
@@ -226,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             // --- Ô NHẬP USERNAME HOẶC EMAIL ---
                             Text(
-                              'ENTERPRISE USERNAME OR EMAIL',
+                              'TÊN ĐĂNG NHẬP HOẶC EMAIL',
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
                             const SizedBox(height: 8),
@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             // --- Ô NHẬP MẬT KHẨU ---
                             Text(
-                              'PASSWORD',
+                              'MẬT KHẨU',
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
                             const SizedBox(height: 8),
@@ -290,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   // Xử lý khi nhấn Quên mật khẩu
                                 },
                                 child: const Text(
-                                  'Forgot Enterprise Password?',
+                                  'Quên mật khẩu doanh nghiệp?',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppTheme.secondary,
@@ -316,7 +316,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   : const Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Text('Login'),
+                                        Text('Đăng nhập'),
                                         SizedBox(width: 8),
                                         Icon(Icons.arrow_forward, size: 20),
                                       ],
@@ -334,7 +334,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              'ADMIN SUPPORT',
+                              'HỖ TRỢ DOANH NGHIỆP',
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
                           ),
@@ -348,7 +348,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                         icon: const Icon(Icons.contact_support_outlined, color: AppTheme.onSurfaceVariant),
                         label: const Text(
-                          'Contact Corporate IT Support',
+                          'Liên hệ hỗ trợ IT doanh nghiệp',
                           style: TextStyle(color: AppTheme.onSurfaceVariant),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -367,7 +367,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           InkWell(
                             onTap: () {},
-                            child: const Text('Security Standards', style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant)),
+                            child: const Text('Tiêu chuẩn bảo mật', style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant)),
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 8),
@@ -375,14 +375,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           InkWell(
                             onTap: () {},
-                            child: const Text('Privacy Policy', style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant)),
+                            child: const Text('Chính sách bảo mật', style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant)),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       const Center(
                         child: Text(
-                          'System v4.2.0 • Build 2023.11.24',
+                          'Hệ thống v4.2.0 • Bản dựng 2026.06.30',
                           style: TextStyle(fontSize: 10, color: AppTheme.onSurfaceVariant), // Loại bỏ thuộc tính opacity không hợp lệ
                         ),
                       )

@@ -71,7 +71,7 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: AppTheme.primaryContainer,
                     child: Text(
                       _avatarInitial(auth.currentUser?.fullName),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -168,15 +168,15 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
         toolbarHeight: 78,
+        centerTitle: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Xin chào, ${auth.currentUser?.fullName ?? 'Điều phối viên'}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primary),
             ),
             const SizedBox(height: 3),
             const Text(
@@ -198,7 +198,7 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
               padding: const EdgeInsets.only(right: 20),
               child: CircleAvatar(
                 radius: 18,
-                backgroundColor: AppTheme.primary,
+                backgroundColor: AppTheme.primaryContainer,
                 child: Text(
                   _avatarInitial(auth.currentUser?.fullName),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -207,26 +207,36 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
             ),
           ),
         ],
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.outlineVariant, width: 1),
+        ),
       ),
       body: pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: AppTheme.primary,
-        unselectedItemColor: AppTheme.onSurfaceVariant,
-        type: BottomNavigationBarType.fixed,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping_rounded),
-            label: 'Fleet Tracking',
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: AppTheme.outlineVariant, width: 1),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_rounded),
-            label: 'Kênh Chat',
-          ),
-        ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) => setState(() => _selectedIndex = index),
+          selectedItemColor: AppTheme.primary,
+          unselectedItemColor: AppTheme.onSurfaceVariant,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          backgroundColor: Colors.white,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.local_shipping_rounded),
+              label: 'Giám sát giao hàng',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_rounded),
+              label: 'Kênh Chat',
+            ),
+          ],
+        ),
       ),
     );
   }

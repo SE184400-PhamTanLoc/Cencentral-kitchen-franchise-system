@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../business/providers/auth_provider.dart';
@@ -40,10 +39,20 @@ class _ChatScreenState extends State<ChatScreen> {
             _startConversation();
           }
         });
+      } else if (auth.userRole == 'SUPPLY_COORDINATOR') {
+        _selectedKitchenId = null; // Driver chats with Store, so kitchenId is null
+        _chatProvider.fetchStoresAndKitchens().then((_) {
+          if (_chatProvider.storesList.isNotEmpty) {
+            setState(() {
+              _selectedStoreId = _chatProvider.storesList.first['storeId'] as int?;
+            });
+            _startConversation();
+          }
+        });
       } else {
-        // FRANCHISE_STAFF or MANAGER or ADMIN
+        // FRANCHISE_STAFF
         _selectedStoreId = auth.storeId ?? 1;
-        _selectedKitchenId = auth.kitchenId ?? 1; // Default kitchen
+        _selectedKitchenId = auth.kitchenId ?? 1; // Default to chat with kitchen
         _startConversation();
       }
       _isInit = false;
@@ -105,97 +114,140 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: AppBar(
-              automaticallyImplyLeading: widget.showBackButton,
-              backgroundColor: AppTheme.primary.withOpacity(0.85),
-              elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.white),
-              centerTitle: true,
-              title: Column(
+      extendBodyBehindAppBar: false,
+      appBar: AppBar(
+        automaticallyImplyLeading: widget.showBackButton,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: AppTheme.primary),
+        title: Column(
+          children: [
+            const Text(
+              'Kênh Liên Lạc',
+              style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              auth.userRole == 'KITCHEN_STAFF' 
+                  ? 'Bếp trung tâm ➔ Cửa hàng' 
+                  : auth.userRole == 'SUPPLY_COORDINATOR'
+                      ? 'Nhân viên giao hàng ➔ Cửa hàng'
+                      : _selectedKitchenId != null
+                          ? 'Cửa hàng ➔ Bếp trung tâm'
+                          : 'Cửa hàng ➔ Nhân viên giao hàng',
+              style: const TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync_rounded, color: AppTheme.primary),
+            onPressed: () {
+              chatProvider.loadConversationAsync(_selectedStoreId, _selectedKitchenId);
+            },
+          ),
+        ],
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.outlineVariant, width: 1),
+        ),
+      ),
+      body: Column(
+        children: [
+          // Segmented channel toggle selector for Franchise Store
+          if (auth.userRole == 'FRANCHISE_STAFF')
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(bottom: BorderSide(color: AppTheme.outlineVariant, width: 1)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Kênh Liên Lạc',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
+                  ChoiceChip(
+                    showCheckmark: false,
+                    label: const Text('Bếp trung tâm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    selected: _selectedKitchenId != null,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedKitchenId = auth.kitchenId ?? 1;
+                        });
+                        _startConversation();
+                      }
+                    },
+                    selectedColor: AppTheme.primary.withOpacity(0.08),
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: _selectedKitchenId != null ? AppTheme.primary : const Color(0xFFE2E8F0)),
+                    ),
                   ),
-                  Text(
-                    auth.userRole == 'KITCHEN_STAFF' 
-                        ? 'Bếp trung tâm -> Cửa hàng' 
-                        : 'Cửa hàng -> Bếp trung tâm',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500),
+                  const SizedBox(width: 12),
+                  ChoiceChip(
+                    showCheckmark: false,
+                    label: const Text('Nhân viên giao hàng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    selected: _selectedKitchenId == null,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedKitchenId = null;
+                        });
+                        _startConversation();
+                      }
+                    },
+                    selectedColor: AppTheme.primary.withOpacity(0.08),
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: _selectedKitchenId == null ? AppTheme.primary : const Color(0xFFE2E8F0)),
+                    ),
                   ),
                 ],
               ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.sync_rounded, color: Colors.white),
-                  onPressed: () {
-                    chatProvider.loadConversationAsync(_selectedStoreId, _selectedKitchenId);
-                  },
-                ),
-              ],
             ),
-          ),
-        ),
-      ),
-      body: Stack(
-        children: [
-          // Dynamic Background Elements
-          Positioned(
-            top: 100, right: -50,
-            child: Container(
-              width: 200, height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [AppTheme.secondary.withOpacity(0.15), Colors.transparent]),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 200, left: -50,
-            child: Container(
-              width: 300, height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [AppTheme.primary.withOpacity(0.1), Colors.transparent]),
-              ),
-            ),
-          ),
-          Column(
-            children: [
-              SizedBox(height: MediaQuery.of(context).padding.top + 60),
-          // Dropdown filter for kitchen staff to select stores
-          if (auth.userRole == 'KITCHEN_STAFF' && chatProvider.storesList.isNotEmpty)
+
+          // Dropdown filter for kitchen staff or driver to select stores
+          if ((auth.userRole == 'KITCHEN_STAFF' || auth.userRole == 'SUPPLY_COORDINATOR') && chatProvider.storesList.isNotEmpty)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(bottom: BorderSide(color: AppTheme.outlineVariant, width: 1)),
+              ),
               child: Row(
                 children: [
-                  const Text('Chọn Cửa Hàng: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Chọn Cửa Hàng: ', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary)),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: DropdownButton<int>(
-                      isExpanded: true,
-                      value: _selectedStoreId,
-                      items: chatProvider.storesList.map((store) {
-                        return DropdownMenuItem<int>(
-                          value: store['storeId'] as int,
-                          child: Text(store['storeName'] as String),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            _selectedStoreId = val;
-                          });
-                          _startConversation();
-                        }
-                      },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppTheme.outlineVariant),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          isExpanded: true,
+                          value: _selectedStoreId,
+                          style: const TextStyle(color: AppTheme.onSurface, fontWeight: FontWeight.w500),
+                          items: chatProvider.storesList.map((store) {
+                            return DropdownMenuItem<int>(
+                              value: store['storeId'] as int,
+                              child: Text(store['storeName'] as String),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedStoreId = val;
+                              });
+                              _startConversation();
+                            }
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -238,7 +290,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 if (!isMe) ...[
                                   CircleAvatar(
                                     radius: 16,
-                                    backgroundColor: AppTheme.secondary,
+                                    backgroundColor: AppTheme.primaryContainer,
                                     child: Text(
                                       msg.senderName.isNotEmpty ? msg.senderName.substring(0, 1).toUpperCase() : 'U',
                                       style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
@@ -250,24 +302,21 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                     decoration: BoxDecoration(
-                                      gradient: isMe 
-                                          ? const LinearGradient(colors: [Color(0xFF00C6FF), Color(0xFF0072FF)])
-                                          : null,
-                                      color: isMe ? null : Colors.white,
+                                      color: isMe ? AppTheme.secondary : Colors.white,
                                       borderRadius: BorderRadius.only(
-                                        topLeft: const Radius.circular(20),
-                                        topRight: const Radius.circular(20),
-                                        bottomLeft: Radius.circular(isMe ? 20 : 4),
-                                        bottomRight: Radius.circular(isMe ? 4 : 20),
+                                        topLeft: const Radius.circular(16),
+                                        topRight: const Radius.circular(16),
+                                        bottomLeft: Radius.circular(isMe ? 16 : 4),
+                                        bottomRight: Radius.circular(isMe ? 4 : 16),
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: isMe ? const Color(0xFF0072FF).withOpacity(0.3) : Colors.black.withOpacity(0.05),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
+                                          color: Colors.black.withOpacity(0.03),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
                                         )
                                       ],
-                                      border: isMe ? null : Border.all(color: AppTheme.outlineVariant.withOpacity(0.5)),
+                                      border: isMe ? null : Border.all(color: AppTheme.outlineVariant),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -309,7 +358,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   const SizedBox(width: 8),
                                   CircleAvatar(
                                     radius: 16,
-                                    backgroundColor: AppTheme.primaryContainer,
+                                    backgroundColor: AppTheme.secondaryContainer,
                                     child: Text(
                                       (auth.currentUser?.fullName ?? 'Me').substring(0, 1).toUpperCase(),
                                       style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
@@ -323,66 +372,60 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
           ),
 
-          // Floating Glassmorphism Input Bar
-          ClipRRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                margin: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8, left: 16, right: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10)),
-                  ],
-                  border: Border.all(color: Colors.white.withOpacity(0.5)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        textCapitalization: TextCapitalization.sentences,
-                        maxLines: 4,
-                        minLines: 1,
-                        style: const TextStyle(fontSize: 15),
-                        decoration: InputDecoration(
-                          hintText: 'Nhập tin nhắn...',
-                          hintStyle: TextStyle(color: AppTheme.outline.withOpacity(0.7)),
-                          filled: true,
-                          fillColor: AppTheme.background.withOpacity(0.5),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                          isDense: true,
+          // Message input bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(color: AppTheme.outlineVariant, width: 1),
+              ),
+            ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      textCapitalization: TextCapitalization.sentences,
+                      maxLines: 4,
+                      minLines: 1,
+                      style: const TextStyle(fontSize: 15, color: AppTheme.onSurface),
+                      decoration: InputDecoration(
+                        hintText: 'Nhập tin nhắn...',
+                        hintStyle: const TextStyle(color: AppTheme.outline),
+                        filled: true,
+                        fillColor: AppTheme.background,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
                         ),
-                        onSubmitted: (_) => _sendMessage(),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 1),
+                        ),
+                        isDense: true,
                       ),
+                      onSubmitted: (_) => _sendMessage(),
                     ),
-                    const SizedBox(width: 12),
-                    Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(colors: [Color(0xFF00C6FF), Color(0xFF0072FF)]),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Color(0xFF0072FF), blurRadius: 10, offset: Offset(0, 4)),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                        onPressed: _sendMessage,
-                      ),
+                  ),
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: AppTheme.primaryContainer,
+                    child: IconButton(
+                      icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                      onPressed: _sendMessage,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
-    ],
-  ),
-);
+    );
   }
 
   String _formatTime(DateTime? dt) {

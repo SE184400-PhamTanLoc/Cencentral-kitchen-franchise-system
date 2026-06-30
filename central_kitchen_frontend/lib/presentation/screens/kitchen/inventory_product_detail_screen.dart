@@ -85,7 +85,7 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Batches', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                        const Text('Lô hàng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.primary)),
                         Text('${provider.batches.length} lô', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
                       ],
                     ),
@@ -157,6 +157,12 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
     final messenger = ScaffoldMessenger.of(context);
     final kitchenId = auth.kitchenId ?? 1;
     final isEditMode = existingBatch != null;
+    if (!isEditMode && !ingredient.isRawMaterial) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Chỉ cho phép nhập kho thủ công nguyên liệu thô. Bán thành phẩm và thành phẩm phải được sản xuất theo công thức BOM.')),
+      );
+      return;
+    }
     final batchCodeController = TextEditingController(text: existingBatch?.batchCode ?? '');
     final quantityController = TextEditingController(text: (existingBatch?.quantity ?? 0).toStringAsFixed(2));
     final remainingController = TextEditingController(text: (existingBatch?.remainingQuantity ?? 0).toStringAsFixed(2));

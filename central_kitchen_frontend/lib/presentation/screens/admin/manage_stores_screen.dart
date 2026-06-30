@@ -430,93 +430,206 @@ class _StoreEditDialogState extends State<_StoreEditDialog> {
     }
   }
 
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(fontSize: 13, color: AppTheme.onSurfaceVariant),
+      prefixIcon: Icon(icon, color: AppTheme.onSurfaceVariant, size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF8F9FB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.store != null;
 
-    return AlertDialog(
-      title: Text(isEditMode ? 'Chỉnh sửa Cửa hàng' : 'Thêm Cửa hàng mới'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Tên cửa hàng nhượng quyền'),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống tên' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Địa chỉ cửa hàng'),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống địa chỉ' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Số điện thoại'),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _creditController,
-                decoration: const InputDecoration(labelText: 'Hạn mức nợ tối đa (\$)'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) return null;
-                  if (double.tryParse(val) == null) return 'Phải là định dạng số hợp lệ';
-                  return null;
-                },
-              ),
-              if (isEditMode) ...[
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  title: const Text('Trạng thái hoạt động'),
-                  value: _isActive,
-                  onChanged: (val) => setState(() => _isActive = val),
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.white,
+      elevation: 10,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Custom Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        isEditMode ? Icons.edit_location_alt_outlined : Icons.add_business_outlined,
+                        color: AppTheme.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isEditMode ? 'Chỉnh sửa Cửa hàng' : 'Thêm Cửa hàng mới',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Thông tin chi tiết cửa hàng franchise nhượng quyền',
+                            style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                TextFormField(
+                  controller: _nameController,
+                  decoration: _buildInputDecoration('Tên cửa hàng nhượng quyền', Icons.storefront_outlined),
+                  validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống tên' : null,
+                ),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _addressController,
+                  decoration: _buildInputDecoration('Địa chỉ cửa hàng', Icons.location_on_outlined),
+                  validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống địa chỉ' : null,
+                ),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: _buildInputDecoration('Số điện thoại', Icons.phone_outlined),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _creditController,
+                  decoration: _buildInputDecoration('Hạn mức nợ tối đa (\$)', Icons.attach_money_outlined),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return null;
+                    if (double.tryParse(val) == null) return 'Phải là định dạng số hợp lệ';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                if (isEditMode) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: SwitchListTile(
+                      title: const Text('Trạng thái hoạt động', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary)),
+                      value: _isActive,
+                      activeColor: AppTheme.secondary,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      onChanged: (val) => setState(() => _isActive = val),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ] else ...[
+                  const SizedBox(height: 10),
+                ],
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        child: const Text('Hủy', style: TextStyle(color: AppTheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (!_formKey.currentState!.validate()) return;
+                          final provider = context.read<AdminProvider>();
+                          
+                          final storeData = {
+                            'storeName': _nameController.text.trim(),
+                            'address': _addressController.text.trim(),
+                            'phoneNumber': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+                            'creditLimit': _creditController.text.trim().isEmpty ? null : double.tryParse(_creditController.text),
+                            'isActive': _isActive,
+                          };
+
+                          bool success;
+                          if (isEditMode) {
+                            success = await provider.editStore(widget.store!.storeId, storeData);
+                          } else {
+                            success = await provider.addStore(storeData);
+                          }
+
+                          if (mounted) {
+                            if (success) {
+                              Navigator.pop(context);
+                              widget.onSaved();
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEditMode ? 'Cập nhật thành công!' : 'Tạo cửa hàng thành công!')));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? 'Có lỗi xảy ra!')));
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Lưu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    )
+                  ],
                 )
-              ]
-            ],
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-        ElevatedButton(
-          onPressed: () async {
-            if (!_formKey.currentState!.validate()) return;
-            final provider = context.read<AdminProvider>();
-            
-            final storeData = {
-              'storeName': _nameController.text.trim(),
-              'address': _addressController.text.trim(),
-              'phoneNumber': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-              'creditLimit': _creditController.text.trim().isEmpty ? null : double.tryParse(_creditController.text),
-              'isActive': _isActive,
-            };
-
-            bool success;
-            if (isEditMode) {
-              success = await provider.editStore(widget.store!.storeId, storeData);
-            } else {
-              success = await provider.addStore(storeData);
-            }
-
-            if (mounted) {
-              if (success) {
-                Navigator.pop(context);
-                widget.onSaved();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEditMode ? 'Cập nhật thành công!' : 'Tạo cửa hàng thành công!')));
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? 'Có lỗi xảy ra!')));
-              }
-            }
-          },
-          child: const Text('Lưu'),
-        )
-      ],
     );
   }
 }
@@ -550,81 +663,193 @@ class _KitchenEditDialogState extends State<_KitchenEditDialog> {
     }
   }
 
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(fontSize: 13, color: AppTheme.onSurfaceVariant),
+      prefixIcon: Icon(icon, color: AppTheme.onSurfaceVariant, size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF8F9FB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.kitchen != null;
 
-    return AlertDialog(
-      title: Text(isEditMode ? 'Chỉnh sửa Bếp' : 'Thêm Bếp mới'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Tên bếp trung tâm'),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống tên' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Địa chỉ bếp'),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống địa chỉ' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Số điện thoại liên hệ'),
-                keyboardType: TextInputType.phone,
-              ),
-              if (isEditMode) ...[
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  title: const Text('Trạng thái hoạt động'),
-                  value: _isActive,
-                  onChanged: (val) => setState(() => _isActive = val),
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.white,
+      elevation: 10,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Custom Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        isEditMode ? Icons.edit_road_outlined : Icons.add_home_work_outlined,
+                        color: AppTheme.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isEditMode ? 'Chỉnh sửa Bếp' : 'Thêm Bếp mới',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Thông tin chi tiết bếp sản xuất trung tâm',
+                            style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                TextFormField(
+                  controller: _nameController,
+                  decoration: _buildInputDecoration('Tên bếp trung tâm', Icons.kitchen_outlined),
+                  validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống tên' : null,
+                ),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _addressController,
+                  decoration: _buildInputDecoration('Địa chỉ bếp', Icons.location_on_outlined),
+                  validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống địa chỉ' : null,
+                ),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: _buildInputDecoration('Số điện thoại liên hệ', Icons.phone_outlined),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 14),
+
+                if (isEditMode) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: SwitchListTile(
+                      title: const Text('Trạng thái hoạt động', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary)),
+                      value: _isActive,
+                      activeColor: AppTheme.secondary,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      onChanged: (val) => setState(() => _isActive = val),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ] else ...[
+                  const SizedBox(height: 10),
+                ],
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        child: const Text('Hủy', style: TextStyle(color: AppTheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (!_formKey.currentState!.validate()) return;
+                          final provider = context.read<AdminProvider>();
+                          
+                          final kitchenData = {
+                            'kitchenName': _nameController.text.trim(),
+                            'address': _addressController.text.trim(),
+                            'phoneNumber': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+                            'isActive': _isActive,
+                          };
+
+                          bool success;
+                          if (isEditMode) {
+                            success = await provider.editKitchen(widget.kitchen!.kitchenId, kitchenData);
+                          } else {
+                            success = await provider.addKitchen(kitchenData);
+                          }
+
+                          if (mounted) {
+                            if (success) {
+                              Navigator.pop(context);
+                              widget.onSaved();
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEditMode ? 'Cập nhật thành công!' : 'Tạo bếp thành công!')));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? 'Có lỗi xảy ra!')));
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Lưu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    )
+                  ],
                 )
-              ]
-            ],
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-        ElevatedButton(
-          onPressed: () async {
-            if (!_formKey.currentState!.validate()) return;
-            final provider = context.read<AdminProvider>();
-            
-            final kitchenData = {
-              'kitchenName': _nameController.text.trim(),
-              'address': _addressController.text.trim(),
-              'phoneNumber': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-              'isActive': _isActive,
-            };
-
-            bool success;
-            if (isEditMode) {
-              success = await provider.editKitchen(widget.kitchen!.kitchenId, kitchenData);
-            } else {
-              success = await provider.addKitchen(kitchenData);
-            }
-
-            if (mounted) {
-              if (success) {
-                Navigator.pop(context);
-                widget.onSaved();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEditMode ? 'Cập nhật thành công!' : 'Tạo bếp thành công!')));
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? 'Có lỗi xảy ra!')));
-              }
-            }
-          },
-          child: const Text('Lưu'),
-        )
-      ],
     );
   }
 }

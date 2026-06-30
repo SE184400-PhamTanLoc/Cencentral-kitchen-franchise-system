@@ -30,9 +30,13 @@ public class ChatMessageRepository : IChatMessageRepository
 
         if (storeId.HasValue)
             query = query.Where(m => m.StoreId == storeId.Value);
+        else
+            query = query.Where(m => m.StoreId == null);
 
         if (kitchenId.HasValue)
             query = query.Where(m => m.KitchenId == kitchenId.Value);
+        else
+            query = query.Where(m => m.KitchenId == null);
 
         return await query
             .OrderBy(m => m.CreatedAt)

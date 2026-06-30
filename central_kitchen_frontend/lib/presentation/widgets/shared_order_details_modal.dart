@@ -8,6 +8,7 @@ import '../../business/providers/inventory_provider.dart';
 import '../../business/providers/delivery_chat_provider.dart';
 import '../../core/constants/app_theme.dart';
 import '../../data/models/order_model.dart';
+import 'ingredient_image_helper.dart';
 
 class SharedOrderDetailsModal extends StatefulWidget {
   final int orderId;
@@ -50,6 +51,37 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
   final Map<int, TextEditingController> _controllers = {};
   final TextEditingController _notesController = TextEditingController();
   bool _isActionLoading = false;
+
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+      prefixIcon: Icon(icon, color: const Color(0xFF64748B), size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF8F9FB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF00236F), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -315,21 +347,21 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
         : 'N/A';
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.outlineVariant.withOpacity(0.5)),
+        color: const Color(0xFFF8F9FB),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         children: [
           _buildInfoRow(Icons.calendar_today_rounded, 'Thời gian khởi tạo', dateStr),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _buildInfoRow(Icons.kitchen_rounded, 'Bếp cấp hàng', details.kitchenName),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _buildInfoRow(Icons.storefront_rounded, 'Cửa hàng nhận', details.storeName),
           if (details.notes != null && details.notes!.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             _buildInfoRow(Icons.notes_rounded, 'Ghi chú đặt', details.notes!),
           ],
         ],
@@ -341,13 +373,13 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: AppTheme.onSurfaceVariant),
+        Icon(icon, size: 16, color: const Color(0xFF64748B)),
         const SizedBox(width: 8),
         Text(
           '$label: ',
           style: const TextStyle(
             fontSize: 12.5,
-            color: AppTheme.onSurfaceVariant,
+            color: Color(0xFF64748B),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -356,7 +388,7 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
             value,
             style: const TextStyle(
               fontSize: 12.5,
-              color: AppTheme.onSurface,
+              color: Color(0xFF1E293B),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -373,108 +405,134 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
         role != 'SUPPLY_COORDINATOR' &&
         (statusUpper == 'SHIPPED' || statusUpper == 'DELIVERING' || statusUpper == 'APPROVED');
 
-    return ListView.separated(
+    return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: details.items.length,
-      separatorBuilder: (context, index) => const Divider(height: 12),
       itemBuilder: (context, index) {
         final item = details.items[index];
         final amountText = _fmt(item.quantityOrdered * item.unitPrice);
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Column(
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FB),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.ingredientName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13.5,
-                        color: AppTheme.onSurface,
-                      ),
-                    ),
+              // Image Preview
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: buildIngredientPreview(
+                    null,
+                    item.ingredientName,
+                    size: 58,
+                    borderRadius: 12,
+                    fallback: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF64748B), size: 24),
                   ),
-                  Text(
-                    amountText,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.5,
-                      color: AppTheme.primary,
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Đơn giá: ${_fmt(item.unitPrice)} / ${item.unit}',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
-                  ),
-                  Text(
-                    'Đặt: ${item.quantityOrdered} ${item.unit}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-              if (item.quantityDelivered != null && !isFranchiseConfirmState) ...[
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+              const SizedBox(width: 12),
+              // Name and Subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Thực nhận: ${item.quantityDelivered} ${item.unit}',
+                      item.ingredientName,
                       style: const TextStyle(
-                        fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        fontSize: 14,
+                        color: Color(0xFF1E293B),
                       ),
                     ),
-                  ],
-                ),
-              ],
-              if (isFranchiseConfirmState) ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const Spacer(),
-                    const Text(
-                      'Thực nhận: ',
-                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Đơn giá: ${_fmt(item.unitPrice)} / ${item.unit}',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                     ),
-                    SizedBox(
-                      width: 90,
-                      height: 38,
-                      child: TextField(
-                        controller: _controllers[item.ingredientId],
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: AppTheme.outlineVariant),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
-                          ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Số lượng đặt: ${item.quantityOrdered} ${item.unit}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                    ),
+                    if (item.quantityDelivered != null && !isFranchiseConfirmState) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Thực nhận: ${item.quantityDelivered} ${item.unit}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(item.unit, style: const TextStyle(fontSize: 12)),
+                    ],
+                    if (isFranchiseConfirmState) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text(
+                            'Thực nhận: ',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          ),
+                          const SizedBox(width: 4),
+                          SizedBox(
+                            width: 80,
+                            height: 32,
+                            child: TextField(
+                              controller: _controllers[item.ingredientId],
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Color(0xFF00236F), width: 1.5),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(item.unit, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-              ],
+              ),
+              const SizedBox(width: 8),
+              // Price total
+              Text(
+                amountText,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF00236F),
+                ),
+              ),
             ],
           ),
         );
@@ -684,43 +742,103 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
 
   Future<void> _showCancelDialog(BuildContext context, OrderDetailModel details) async {
     final reasonController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hủy đơn hàng'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Vui lòng nhập lý do hủy đơn hàng (tối thiểu 5 ký tự):'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                hintText: 'Nhập lý do tại đây...',
-                border: OutlineInputBorder(),
-              ),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        elevation: 10,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.cancel_outlined,
+                        color: Colors.red,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hủy đơn hàng',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.red),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Yêu cầu hủy đơn đặt hàng hiện tại',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: reasonController,
+                  decoration: _buildInputDecoration('Lý do hủy đơn hàng', Icons.notes_rounded),
+                  validator: (val) {
+                    if (val == null || val.trim().length < 5) {
+                      return 'Lý do phải từ 5 ký tự trở lên';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        child: const Text('Hủy bỏ', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (formKey.currentState!.validate()) {
+                            Navigator.pop(ctx, true);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Xác nhận hủy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('HỦY BỎ'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (reasonController.text.trim().length >= 5) {
-                Navigator.pop(ctx, true);
-              } else {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Lý do phải từ 5 ký tự trở lên!'), backgroundColor: Colors.amber),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
-            child: const Text('XÁC NHẬN HỦY', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
 
@@ -845,43 +963,113 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
 
   Future<void> _approveOrRejectManager(BuildContext context, int orderId, bool isApprove) async {
     final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(isApprove ? 'Duyệt đơn hàng' : 'Từ chối đơn hàng'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(isApprove ? 'Thêm ghi chú duyệt đơn (tùy chọn):' : 'Vui lòng nhập ghi chú từ chối đơn:'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: noteController,
-              decoration: const InputDecoration(
-                hintText: 'Nhập ghi chú...',
-                border: OutlineInputBorder(),
-              ),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        elevation: 10,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: (isApprove ? Colors.green : Colors.red).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        isApprove ? Icons.check_circle_outline : Icons.cancel_outlined,
+                        color: isApprove ? Colors.green : Colors.red,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isApprove ? 'Duyệt đơn hàng' : 'Từ chối đơn hàng',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: isApprove ? Colors.green.shade800 : Colors.red.shade800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isApprove ? 'Xác nhận đồng ý cấp hàng cho đơn này' : 'Từ chối và hủy đơn đặt hàng',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: noteController,
+                  decoration: _buildInputDecoration(
+                    isApprove ? 'Ghi chú duyệt đơn (tùy chọn)' : 'Lý do từ chối (bắt buộc)',
+                    Icons.notes_rounded,
+                  ),
+                  validator: (val) {
+                    if (!isApprove && (val == null || val.trim().isEmpty)) {
+                      return 'Vui lòng ghi lý do từ chối';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (formKey.currentState!.validate()) {
+                            Navigator.pop(ctx, true);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isApprove ? Colors.green.shade700 : Colors.red.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          isApprove ? 'Duyệt' : 'Từ chối',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('HỦY BỎ'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (isApprove || noteController.text.trim().isNotEmpty) {
-                Navigator.pop(ctx, true);
-              } else {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Vui lòng ghi lý do từ chối!'), backgroundColor: Colors.amber),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: isApprove ? AppTheme.primary : AppTheme.error),
-            child: Text(isApprove ? 'DUYỆT ĐƠN' : 'TỪ CHỐI', style: const TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
 

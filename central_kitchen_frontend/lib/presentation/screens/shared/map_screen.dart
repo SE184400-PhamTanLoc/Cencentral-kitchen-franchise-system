@@ -7,8 +7,6 @@ import '../../../business/providers/auth_provider.dart';
 import '../../../business/providers/delivery_chat_provider.dart';
 import '../../../business/providers/cart_order_provider.dart';
 import '../../../data/models/order_model.dart';
-import 'dart:ui';
-
 import '../../../core/constants/app_theme.dart';
 
 class MapScreen extends StatefulWidget {
@@ -285,20 +283,24 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        backgroundColor: AppTheme.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppTheme.primary),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Bản đồ & Định vị',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Text(
-              'Vai trò: ${auth.userRole ?? "N/A"} - Giám sát vị trí giao hàng',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              'Vai trò: ${auth.userRole ?? "N/A"} • Giám sát giao hàng',
+              style: const TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w500),
             ),
           ],
+        ),
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.outlineVariant, width: 1),
         ),
       ),
       body: Stack(
@@ -321,7 +323,7 @@ class _MapScreenState extends State<MapScreen> {
                 polylines: <Polyline<Object>>[
                   Polyline<Object>(
                     points: _mockRoute,
-                    color: Colors.blue.withOpacity(0.5),
+                    color: AppTheme.secondary.withOpacity(0.5),
                     strokeWidth: 4.0,
                   ),
                 ],
@@ -331,152 +333,147 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ],
           ),
-
+ 
           // 2. Order Selector Overlay (Top)
           Positioned(
             top: 16,
             left: 16,
             right: 16,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))
-                    ],
-                    border: Border.all(color: Colors.white.withOpacity(0.5)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.outlineVariant),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryContainer.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.receipt_long_rounded, color: AppTheme.primary, size: 20),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.receipt_long_rounded, color: AppTheme.primary, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: cart.orders.isEmpty
-                            ? const Text('Chưa có đơn hàng nào', style: TextStyle(fontWeight: FontWeight.w600))
-                            : DropdownButtonHideUnderline(
-                                child: DropdownButton<int>(
-                                  isExpanded: true,
-                                  icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.primary),
-                                  value: _selectedOrderId,
-                                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.onSurface, fontSize: 15),
-                                  items: cart.orders.map((order) {
-                                    return DropdownMenuItem<int>(
-                                      value: order.orderId,
-                                      child: Text('${order.orderCode} - ${order.orderStatus}'),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _selectedOrderId = val;
-                                        _currentMockStep = 0;
-                                      });
-                                      _startMonitoring();
-                                    }
-                                  },
-                                ),
-                              ),
-                      ),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: cart.orders.isEmpty
+                        ? const Text('Chưa có đơn hàng nào', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.onSurface))
+                        : DropdownButtonHideUnderline(
+                            child: DropdownButton<int>(
+                              isExpanded: true,
+                              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.primary),
+                              value: _selectedOrderId,
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.onSurface, fontSize: 14),
+                              items: cart.orders.map((order) {
+                                return DropdownMenuItem<int>(
+                                  value: order.orderId,
+                                  child: Text('${order.orderCode} - ${order.orderStatus}'),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _selectedOrderId = val;
+                                    _currentMockStep = 0;
+                                  });
+                                  _startMonitoring();
+                                }
+                              },
+                            ),
+                          ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
-
+ 
           // 3. Thẻ thông tin đơn hàng (Trạng thái - Người nhận - Vị trí xe)
           Positioned(
-            top: 86,
+            top: 96,
             left: 16,
             right: 16,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 8))
-                    ],
-                    border: Border.all(color: Colors.white.withOpacity(0.5)),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.outlineVariant),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Hàng 1: Trạng thái đơn hàng (chip màu)
+                  Row(
                     children: [
-                      // Hàng 1: Trạng thái đơn hàng (chip màu)
-                      Row(
-                        children: [
-                          const Text(
-                            'Trạng thái đơn:',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.onSurfaceVariant),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: statusInfo.color.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(statusInfo.icon, size: 14, color: statusInfo.color),
-                                const SizedBox(width: 4),
-                                Text(
-                                  statusInfo.label,
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: statusInfo.color),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'Trạng thái đơn:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.onSurfaceVariant),
                       ),
-                      const Divider(height: 18),
-                      // Hàng 2: Địa chỉ người nhận
-                      _buildInfoRow(
-                        icon: Icons.storefront_rounded,
-                        iconColor: const Color(0xFFEF4444),
-                        title: 'Người nhận',
-                        content: _recipientAddress(selectedOrder),
-                      ),
-                      const SizedBox(height: 10),
-                      // Hàng 3: Vị trí hiện tại của xe giao hàng
-                      _buildInfoRow(
-                        icon: Icons.local_shipping_rounded,
-                        iconColor: AppTheme.secondary,
-                        title: 'Vị trí xe hiện tại',
-                        content: latestLoc != null
-                            ? '${latestLoc.latitude.toStringAsFixed(5)}, ${latestLoc.longitude.toStringAsFixed(5)}'
-                                '  •  ${_formatTime(latestLoc.recordedAt)}'
-                            : 'Chưa có dữ liệu GPS',
-                        subtitle: latestLoc != null && latestLoc.driverName.isNotEmpty
-                            ? 'Tài xế: ${latestLoc.driverName}'
-                            : null,
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusInfo.color.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(statusInfo.icon, size: 14, color: statusInfo.color),
+                            const SizedBox(width: 4),
+                            Text(
+                              statusInfo.label,
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusInfo.color),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
+                  const Divider(height: 18),
+                  // Hàng 2: Địa chỉ người nhận
+                  _buildInfoRow(
+                    icon: Icons.storefront_rounded,
+                    iconColor: const Color(0xFFEF4444),
+                    title: 'Người nhận',
+                    content: _recipientAddress(selectedOrder),
+                  ),
+                  const SizedBox(height: 10),
+                  // Hàng 3: Vị trí hiện tại của xe giao hàng
+                  _buildInfoRow(
+                    icon: Icons.local_shipping_rounded,
+                    iconColor: AppTheme.secondary,
+                    title: 'Vị trí xe hiện tại',
+                    content: latestLoc != null
+                        ? '${latestLoc.latitude.toStringAsFixed(5)}, ${latestLoc.longitude.toStringAsFixed(5)}'
+                            '  •  ${_formatTime(latestLoc.recordedAt)}'
+                        : 'Chưa có dữ liệu GPS',
+                    subtitle: latestLoc != null && latestLoc.driverName.isNotEmpty
+                        ? 'Tài xế: ${latestLoc.driverName}'
+                        : null,
+                  ),
+                ],
               ),
             ),
           ),
-
-
+ 
           // 4. Loader Overlay
           if (deliveryChat.isLocationLoading)
             Positioned.fill(
@@ -487,154 +484,155 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
-            
+             
           // 5. Simulation / Driver Controller Panel (Floating Bottom)
           Positioned(
             bottom: 24,
             left: 16,
             right: 16,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 15))
-                    ],
-                    border: Border.all(color: Colors.white.withOpacity(0.6)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.outlineVariant),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.settings_remote_rounded, color: AppTheme.primary, size: 16),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'ĐIỀU PHỐI & GIẢ LẬP GPS',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppTheme.primary, letterSpacing: 1.0),
-                          ),
-                        ],
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.settings_remote_rounded, color: AppTheme.primary, size: 16),
                       ),
-                      const SizedBox(height: 16),
-                      
-                      // Real GPS update buttons
-                      ElevatedButton.icon(
-                        onPressed: _isTracking ? _stopGpsTracking : _startGpsTracking,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                          backgroundColor: _isTracking ? AppTheme.error : AppTheme.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        icon: Icon(_isTracking ? Icons.gps_off_rounded : Icons.gps_fixed_rounded, color: Colors.white),
-                        label: Text(_isTracking ? 'DỪNG PHÁT GPS' : 'PHÁT GPS THỰC TẾ', style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                      ),
-                      if (isDriver && isDelivering) ...[
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          onPressed: cart.isLoading
-                              ? null
-                              : () async {
-                                  if (!hasArrived) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Vui lòng di chuyển xe đến cột mốc Cửa hàng (CH) trên bản đồ trước khi xác nhận!'),
-                                        backgroundColor: Colors.amber,
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                  final success = await cart.arriveOrderAsync(
-                                    orderId: _selectedOrderId!,
-                                    storeId: selectedOrder!.storeId,
-                                  );
-                                  if (mounted) {
-                                    if (success) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Xác nhận giao hàng tới nơi thành công! Trạng thái: SHIPPED.'),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(cart.errorMessage ?? 'Cập nhật thất bại.'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 50),
-                            backgroundColor: hasArrived ? Colors.orange.shade800 : Colors.grey.shade500,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 0,
-                          ),
-                          icon: Icon(hasArrived ? Icons.done_all_rounded : Icons.location_off_rounded, color: Colors.white),
-                          label: Text(
-                            hasArrived ? 'XÁC NHẬN ĐÃ ĐẾN CỬA HÀNG' : 'VUI LÒNG DI CHUYỂN TỚI CỬA HÀNG',
-                            style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-
-                      // Manual Step-by-Step simulator
-                      Text(
-                        'Cột mốc lộ trình (Dành cho Tester):',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.onSurfaceVariant.withOpacity(0.8)),
-                      ),
-                      const SizedBox(height: 10),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: List.generate(_mockRoute.length, (index) {
-                            final isCurrent = latestLoc != null &&
-                                latestLoc.latitude == _mockRoute[index].latitude &&
-                                latestLoc.longitude == _mockRoute[index].longitude;
-                            
-                            String stepName = 'B ${index + 1}';
-                            if (index == 0) stepName = 'Bếp';
-                            if (index == _mockRoute.length - 1) stepName = 'CH';
-
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                child: ChoiceChip(
-                                  label: Text(stepName),
-                                  selected: isCurrent || _currentMockStep == index,
-                                  onSelected: (_) => _sendMockStep(index),
-                                  selectedColor: AppTheme.primary,
-                                  backgroundColor: AppTheme.surfaceContainerLowest,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  showCheckmark: false,
-                                  labelStyle: TextStyle(
-                                    color: (isCurrent || _currentMockStep == index) ? Colors.white : AppTheme.primary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'ĐIỀU PHỐI & GIẢ LẬP GPS',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: AppTheme.primary, letterSpacing: 0.5),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  
+                  // Real GPS update buttons
+                  ElevatedButton.icon(
+                    onPressed: _isTracking ? _stopGpsTracking : _startGpsTracking,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 44),
+                      backgroundColor: _isTracking ? AppTheme.error : AppTheme.primaryContainer,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 0,
+                    ),
+                    icon: Icon(_isTracking ? Icons.gps_off_rounded : Icons.gps_fixed_rounded, color: Colors.white, size: 18),
+                    label: Text(_isTracking ? 'DỪNG PHÁT GPS' : 'PHÁT GPS THỰC TẾ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5)),
+                  ),
+                  if (isDriver && isDelivering) ...[
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: cart.isLoading
+                          ? null
+                          : () async {
+                              if (!hasArrived) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Vui lòng di chuyển xe đến cột mốc Cửa hàng (CH) trên bản đồ trước khi xác nhận!'),
+                                    backgroundColor: Colors.amber,
+                                  ),
+                                );
+                                return;
+                              }
+                              final success = await cart.arriveOrderAsync(
+                                orderId: _selectedOrderId!,
+                                storeId: selectedOrder!.storeId,
+                              );
+                              if (mounted) {
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Xác nhận giao hàng tới nơi thành công! Trạng thái: SHIPPED.'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(cart.errorMessage ?? 'Cập nhật thất bại.'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 44),
+                        backgroundColor: hasArrived ? Colors.orange.shade800 : Colors.grey.shade500,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                      icon: Icon(hasArrived ? Icons.done_all_rounded : Icons.location_off_rounded, color: Colors.white, size: 18),
+                      label: Text(
+                        hasArrived ? 'XÁC NHẬN ĐÃ ĐẾN CỬA HÀNG' : 'VUI LÒNG DI CHUYỂN TỚI CỬA HÀNG',
+                        style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.white, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+ 
+                  // Manual Step-by-Step simulator
+                  Text(
+                    'Cột mốc lộ trình (Dành cho Tester):',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.onSurfaceVariant.withOpacity(0.8)),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(_mockRoute.length, (index) {
+                        final isCurrent = latestLoc != null &&
+                            latestLoc.latitude == _mockRoute[index].latitude &&
+                            latestLoc.longitude == _mockRoute[index].longitude;
+                        
+                        String stepName = 'B ${index + 1}';
+                        if (index == 0) stepName = 'Bếp';
+                        if (index == _mockRoute.length - 1) stepName = 'CH';
+ 
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            child: ChoiceChip(
+                              label: Text(stepName),
+                              selected: isCurrent || _currentMockStep == index,
+                              onSelected: (_) => _sendMockStep(index),
+                              selectedColor: AppTheme.primaryContainer,
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: BorderSide(color: (isCurrent || _currentMockStep == index) ? AppTheme.primaryContainer : AppTheme.outlineVariant),
+                              ),
+                              showCheckmark: false,
+                              labelStyle: TextStyle(
+                                color: (isCurrent || _currentMockStep == index) ? Colors.white : AppTheme.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

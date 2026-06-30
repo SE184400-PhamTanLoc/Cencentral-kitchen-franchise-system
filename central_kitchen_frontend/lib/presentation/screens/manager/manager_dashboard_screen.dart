@@ -58,7 +58,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: AppTheme.primaryContainer,
                     child: Text(
                       _avatarInitial(auth.currentUser?.fullName),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -68,16 +68,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   subtitle: Text(auth.currentUser?.roleName ?? 'Manager'),
                 ),
                 const SizedBox(height: 8),
-                _ManagerMenuTile(
-                  icon: Icons.chat_bubble_outline,
-                  title: 'Nhắn tin nội bộ',
-                  subtitle: 'Trao đổi với bếp và cửa hàng',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    Navigator.of(context).pushNamed('/chat');
-                  },
-                ),
-                const SizedBox(height: 10),
+
                 _ManagerMenuTile(
                   icon: Icons.logout_outlined,
                   title: 'Đăng xuất',
@@ -107,15 +98,15 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
         toolbarHeight: 78,
+        centerTitle: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Xin chào, ${auth.currentUser?.fullName ?? 'Quản lý'}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primary),
             ),
             const SizedBox(height: 3),
             const Text(
@@ -137,7 +128,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               padding: const EdgeInsets.only(right: 20),
               child: CircleAvatar(
                 radius: 18,
-                backgroundColor: AppTheme.primary,
+                backgroundColor: AppTheme.primaryContainer,
                 child: Text(
                   _avatarInitial(auth.currentUser?.fullName),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -146,6 +137,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             ),
           ),
         ],
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.outlineVariant, width: 1),
+        ),
       ),
       body: SafeArea(
         child: Consumer<ManagerProvider>(
@@ -187,24 +181,31 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
           },
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedTabIndex,
-        onTap: (index) => setState(() => _selectedTabIndex = index),
-        selectedItemColor: const Color(0xFF2563EB),
-        unselectedItemColor: const Color(0xFF64748B),
-        type: BottomNavigationBarType.fixed,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.insights_rounded),
-            label: 'Executive Insights',
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: AppTheme.outlineVariant, width: 1),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pending_actions_rounded),
-            label: 'Duyệt đơn',
-          ),
-        ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedTabIndex,
+          onTap: (index) => setState(() => _selectedTabIndex = index),
+          selectedItemColor: AppTheme.primary,
+          unselectedItemColor: const Color(0xFF64748B),
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          backgroundColor: Colors.white,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.insights_rounded),
+              label: 'Báo cáo tổng quan',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.pending_actions_rounded),
+              label: 'Duyệt đơn',
+            ),
+          ],
+        ),
       ),
     );
   }

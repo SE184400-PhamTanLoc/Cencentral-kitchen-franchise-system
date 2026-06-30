@@ -135,11 +135,21 @@ public static class DatabaseSeeder
                 new Ingredient { Name = "Bơ", Sku = "RAW-BUTTER", Unit = "kg", UnitPrice = 120000m, IsRawMaterial = true, MinStockLevel = 10m, CreatedAt = DateTime.UtcNow },
                 new Ingredient { Name = "Thịt heo", Sku = "RAW-PORK", Unit = "kg", UnitPrice = 90000m, IsRawMaterial = true, MinStockLevel = 30m, CreatedAt = DateTime.UtcNow },
                 new Ingredient { Name = "Hành tây", Sku = "RAW-ONION", Unit = "kg", UnitPrice = 18000m, IsRawMaterial = true, MinStockLevel = 15m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Pate", Sku = "RAW-PATE", Unit = "kg", UnitPrice = 80000m, IsRawMaterial = true, MinStockLevel = 20m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Chả lụa", Sku = "RAW-HAM", Unit = "kg", UnitPrice = 110000m, IsRawMaterial = true, MinStockLevel = 15m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Chà bông", Sku = "RAW-FLOSS", Unit = "kg", UnitPrice = 150000m, IsRawMaterial = true, MinStockLevel = 10m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Trứng", Sku = "RAW-EGG", Unit = "quả", UnitPrice = 3000m, IsRawMaterial = true, MinStockLevel = 50m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Thịt bò", Sku = "RAW-BEEF", Unit = "kg", UnitPrice = 220000m, IsRawMaterial = true, MinStockLevel = 20m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Dưa leo & rau thơm", Sku = "RAW-VEG", Unit = "kg", UnitPrice = 12000m, IsRawMaterial = true, MinStockLevel = 20m, CreatedAt = DateTime.UtcNow },
                 
                 // Finished products
                 new Ingredient { Name = "Vỏ bánh mì", Sku = "FIN-BREAD", Unit = "cái", UnitPrice = 3000m, IsRawMaterial = false, MinStockLevel = 100m, CreatedAt = DateTime.UtcNow },
                 new Ingredient { Name = "Xíu mại", Sku = "FIN-MEATBALL", Unit = "viên", UnitPrice = 5000m, IsRawMaterial = false, MinStockLevel = 200m, CreatedAt = DateTime.UtcNow },
-                new Ingredient { Name = "Bánh mì xíu mại hoàn chỉnh", Sku = "FIN-BMXM", Unit = "cái", UnitPrice = 15000m, IsRawMaterial = false, MinStockLevel = 50m, CreatedAt = DateTime.UtcNow }
+                new Ingredient { Name = "Bánh mì xíu mại hoàn chỉnh", Sku = "FIN-BMXM", Unit = "cái", UnitPrice = 15000m, IsRawMaterial = false, MinStockLevel = 50m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Bánh mì pate chả lụa", Sku = "FIN-BMPC", Unit = "cái", UnitPrice = 18000m, IsRawMaterial = false, MinStockLevel = 50m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Bánh mì bò né hoàn chỉnh", Sku = "FIN-BMBN", Unit = "cái", UnitPrice = 25000m, IsRawMaterial = false, MinStockLevel = 30m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Bánh mì chà bông", Sku = "FIN-BMCB", Unit = "cái", UnitPrice = 14000m, IsRawMaterial = false, MinStockLevel = 40m, CreatedAt = DateTime.UtcNow },
+                new Ingredient { Name = "Sốt bơ trứng", Sku = "FIN-SAUCE", Unit = "kg", UnitPrice = 50000m, IsRawMaterial = false, MinStockLevel = 10m, CreatedAt = DateTime.UtcNow }
             };
             context.Ingredients.AddRange(ingredients);
             await context.SaveChangesAsync();
@@ -203,6 +213,84 @@ public static class DatabaseSeeder
             context.RecipeDetails.AddRange(recipeDetailsBMXM);
             await context.SaveChangesAsync();
 
+            // Recipe for Bánh mì pate chả lụa (FIN-BMPC)
+            var recipeBMPC = new Recipe 
+            { 
+                OutputIngredientId = ingredients.First(i => i.Sku == "FIN-BMPC").IngredientId, 
+                Description = "Công thức lắp ráp Bánh mì pate chả lụa",
+                CreatedBy = kitchenUserId
+            };
+            context.Recipes.Add(recipeBMPC);
+            await context.SaveChangesAsync();
+
+            var recipeDetailsBMPC = new List<RecipeDetail>
+            {
+                new RecipeDetail { RecipeId = recipeBMPC.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "FIN-BREAD").IngredientId, QuantityRequired = 1.0000m },
+                new RecipeDetail { RecipeId = recipeBMPC.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "RAW-PATE").IngredientId, QuantityRequired = 0.0300m },
+                new RecipeDetail { RecipeId = recipeBMPC.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "RAW-HAM").IngredientId, QuantityRequired = 0.0500m },
+                new RecipeDetail { RecipeId = recipeBMPC.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "FIN-SAUCE").IngredientId, QuantityRequired = 0.0200m },
+                new RecipeDetail { RecipeId = recipeBMPC.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "RAW-VEG").IngredientId, QuantityRequired = 0.0200m }
+            };
+            context.RecipeDetails.AddRange(recipeDetailsBMPC);
+            await context.SaveChangesAsync();
+
+            // Recipe for Bánh mì bò né hoàn chỉnh (FIN-BMBN)
+            var recipeBMBN = new Recipe 
+            { 
+                OutputIngredientId = ingredients.First(i => i.Sku == "FIN-BMBN").IngredientId, 
+                Description = "Công thức lắp ráp Bánh mì bò né",
+                CreatedBy = kitchenUserId
+            };
+            context.Recipes.Add(recipeBMBN);
+            await context.SaveChangesAsync();
+
+            var recipeDetailsBMBN = new List<RecipeDetail>
+            {
+                new RecipeDetail { RecipeId = recipeBMBN.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "FIN-BREAD").IngredientId, QuantityRequired = 1.0000m },
+                new RecipeDetail { RecipeId = recipeBMBN.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "RAW-BEEF").IngredientId, QuantityRequired = 0.0800m },
+                new RecipeDetail { RecipeId = recipeBMBN.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "FIN-SAUCE").IngredientId, QuantityRequired = 0.0200m },
+                new RecipeDetail { RecipeId = recipeBMBN.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "RAW-VEG").IngredientId, QuantityRequired = 0.0200m }
+            };
+            context.RecipeDetails.AddRange(recipeDetailsBMBN);
+            await context.SaveChangesAsync();
+
+            // Recipe for Bánh mì chà bông (FIN-BMCB)
+            var recipeBMCB = new Recipe 
+            { 
+                OutputIngredientId = ingredients.First(i => i.Sku == "FIN-BMCB").IngredientId, 
+                Description = "Công thức lắp ráp Bánh mì chà bông",
+                CreatedBy = kitchenUserId
+            };
+            context.Recipes.Add(recipeBMCB);
+            await context.SaveChangesAsync();
+
+            var recipeDetailsBMCB = new List<RecipeDetail>
+            {
+                new RecipeDetail { RecipeId = recipeBMCB.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "FIN-BREAD").IngredientId, QuantityRequired = 1.0000m },
+                new RecipeDetail { RecipeId = recipeBMCB.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "RAW-FLOSS").IngredientId, QuantityRequired = 0.0300m },
+                new RecipeDetail { RecipeId = recipeBMCB.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "FIN-SAUCE").IngredientId, QuantityRequired = 0.0300m }
+            };
+            context.RecipeDetails.AddRange(recipeDetailsBMCB);
+            await context.SaveChangesAsync();
+
+            // Recipe for Sốt bơ trứng (FIN-SAUCE)
+            var recipeSauce = new Recipe 
+            { 
+                OutputIngredientId = ingredients.First(i => i.Sku == "FIN-SAUCE").IngredientId, 
+                Description = "Công thức làm sốt bơ trứng",
+                CreatedBy = kitchenUserId
+            };
+            context.Recipes.Add(recipeSauce);
+            await context.SaveChangesAsync();
+
+            var recipeDetailsSauce = new List<RecipeDetail>
+            {
+                new RecipeDetail { RecipeId = recipeSauce.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "RAW-BUTTER").IngredientId, QuantityRequired = 0.5000m },
+                new RecipeDetail { RecipeId = recipeSauce.RecipeId, InputIngredientId = ingredients.First(i => i.Sku == "RAW-EGG").IngredientId, QuantityRequired = 10.0000m }
+            };
+            context.RecipeDetails.AddRange(recipeDetailsSauce);
+            await context.SaveChangesAsync();
+
             logger.LogInformation("Recipes (BOM) seeded successfully.");
 
             // 7. Seed Batches (Kitchen Inventory)
@@ -215,6 +303,13 @@ public static class DatabaseSeeder
                 new Batch { BatchCode = "BAT-BUTTER-01", IngredientId = ingredients.First(i => i.Sku == "RAW-BUTTER").IngredientId, Quantity = 100m, RemainingQuantity = 100m, ManufactureDate = batchDate.AddDays(-2), ExpiryDate = batchDate.AddDays(90), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
                 new Batch { BatchCode = "BAT-PORK-01", IngredientId = ingredients.First(i => i.Sku == "RAW-PORK").IngredientId, Quantity = 300m, RemainingQuantity = 300m, ManufactureDate = batchDate, ExpiryDate = batchDate.AddDays(3), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
                 new Batch { BatchCode = "BAT-ONION-01", IngredientId = ingredients.First(i => i.Sku == "RAW-ONION").IngredientId, Quantity = 150m, RemainingQuantity = 150m, ManufactureDate = batchDate.AddDays(-1), ExpiryDate = batchDate.AddDays(14), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
+                new Batch { BatchCode = "BAT-PATE-01", IngredientId = ingredients.First(i => i.Sku == "RAW-PATE").IngredientId, Quantity = 100m, RemainingQuantity = 100m, ManufactureDate = batchDate.AddDays(-3), ExpiryDate = batchDate.AddDays(30), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
+                new Batch { BatchCode = "BAT-HAM-01", IngredientId = ingredients.First(i => i.Sku == "RAW-HAM").IngredientId, Quantity = 80m, RemainingQuantity = 80m, ManufactureDate = batchDate.AddDays(-2), ExpiryDate = batchDate.AddDays(45), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
+                new Batch { BatchCode = "BAT-FLOSS-01", IngredientId = ingredients.First(i => i.Sku == "RAW-FLOSS").IngredientId, Quantity = 50m, RemainingQuantity = 50m, ManufactureDate = batchDate.AddDays(-10), ExpiryDate = batchDate.AddDays(180), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
+                new Batch { BatchCode = "BAT-SAUCE-01", IngredientId = ingredients.First(i => i.Sku == "FIN-SAUCE").IngredientId, Quantity = 50m, RemainingQuantity = 50m, ManufactureDate = batchDate, ExpiryDate = batchDate.AddDays(7), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
+                new Batch { BatchCode = "BAT-EGG-01", IngredientId = ingredients.First(i => i.Sku == "RAW-EGG").IngredientId, Quantity = 1000m, RemainingQuantity = 1000m, ManufactureDate = batchDate, ExpiryDate = batchDate.AddDays(15), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
+                new Batch { BatchCode = "BAT-BEEF-01", IngredientId = ingredients.First(i => i.Sku == "RAW-BEEF").IngredientId, Quantity = 120m, RemainingQuantity = 120m, ManufactureDate = batchDate, ExpiryDate = batchDate.AddDays(4), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
+                new Batch { BatchCode = "BAT-VEG-01", IngredientId = ingredients.First(i => i.Sku == "RAW-VEG").IngredientId, Quantity = 80m, RemainingQuantity = 80m, ManufactureDate = batchDate, ExpiryDate = batchDate.AddDays(3), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },
                 
                 // Finished product batches
                 new Batch { BatchCode = "BAT-BREAD-01", IngredientId = ingredients.First(i => i.Sku == "FIN-BREAD").IngredientId, Quantity = 1000m, RemainingQuantity = 800m, ManufactureDate = batchDate, ExpiryDate = batchDate.AddDays(2), KitchenId = kitchens[0].KitchenId, CreatedAt = DateTime.UtcNow },

@@ -6,6 +6,7 @@ import '../../../business/providers/inventory_provider.dart';
 import '../../../core/constants/app_theme.dart';
 import '../../../data/models/order_model.dart';
 import 'checkout_screen.dart';
+import '../../widgets/ingredient_image_helper.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -308,7 +309,24 @@ class CartScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.inventory_2_rounded, size: 28, color: AppTheme.secondary),
+                          (() {
+                            final imagePath = getIngredientImage(item.sku, item.name);
+                            if (imagePath != null) {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.asset(imagePath, width: double.infinity, height: 65, fit: BoxFit.cover),
+                              );
+                            }
+                            return Container(
+                              width: double.infinity,
+                              height: 65,
+                              decoration: BoxDecoration(
+                                color: AppTheme.secondary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.inventory_2_rounded, size: 28, color: AppTheme.secondary),
+                            );
+                          })(),
                           const Spacer(),
                           Text(
                             item.name,
@@ -538,19 +556,27 @@ class _CartItemTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.inventory_2_rounded,
-                  color: AppTheme.primary,
-                  size: 24,
-                ),
-              ),
+              (() {
+                final imagePath = getIngredientImage(null, item.name);
+                return Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: imagePath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.asset(imagePath, fit: BoxFit.cover),
+                        )
+                      : const Icon(
+                          Icons.inventory_2_rounded,
+                          color: AppTheme.primary,
+                          size: 28,
+                        ),
+                );
+              })(),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

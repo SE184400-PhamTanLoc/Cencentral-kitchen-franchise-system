@@ -4,6 +4,7 @@ import '../../../business/providers/inventory_provider.dart';
 import '../../../core/constants/app_theme.dart';
 import '../../../data/models/ingredient_model.dart';
 import 'inventory_product_detail_screen.dart';
+import '../../widgets/ingredient_image_helper.dart';
 
 class InventoryProductListScreen extends StatefulWidget {
   const InventoryProductListScreen({super.key});
@@ -297,22 +298,38 @@ class _IngredientCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    ingredient.isRawMaterial ? AppTheme.secondary : AppTheme.primaryContainer,
-                    AppTheme.primary,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            (() {
+              final imagePath = getIngredientImage(ingredient.sku, ingredient.name);
+              if (imagePath != null) {
+                return Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(imagePath, fit: BoxFit.cover),
+                  ),
+                );
+              }
+              return Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      ingredient.isRawMaterial ? AppTheme.secondary : AppTheme.primaryContainer,
+                      AppTheme.primary,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(ingredient.isRawMaterial ? Icons.grain_outlined : Icons.bakery_dining_outlined, color: Colors.white),
-            ),
+                child: Icon(ingredient.isRawMaterial ? Icons.grain_outlined : Icons.bakery_dining_outlined, color: Colors.white),
+              );
+            })(),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -337,7 +354,7 @@ class _IngredientCard extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _Tag(label: ingredient.isRawMaterial ? 'Raw' : 'BFP'),
+                      _Tag(label: ingredient.isRawMaterial ? 'Nguyên liệu thô' : 'Bán thành phẩm'),
                       _Tag(label: '${ingredient.availableQuantity.toStringAsFixed(1)} ${ingredient.unit}'),
                       _Tag(label: '${ingredient.batchCount} lô'),
                     ],

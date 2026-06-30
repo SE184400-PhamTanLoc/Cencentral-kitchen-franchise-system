@@ -271,177 +271,287 @@ class _UserEditDialogState extends State<_UserEditDialog> {
     }
   }
 
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(fontSize: 13, color: AppTheme.onSurfaceVariant),
+      prefixIcon: Icon(icon, color: AppTheme.onSurfaceVariant, size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF8F9FB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.user != null;
     final adminProv = context.watch<AdminProvider>();
 
-    return AlertDialog(
-      title: Text(isEditMode ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản mới'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Username (chỉ cho nhập khi Thêm mới)
-              TextFormField(
-                controller: _usernameController,
-                enabled: !isEditMode,
-                decoration: const InputDecoration(labelText: 'Tên đăng nhập (Username)'),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng điền Username' : null,
-              ),
-              const SizedBox(height: 12),
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.white,
+      elevation: 10,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Custom Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        isEditMode ? Icons.edit_note_outlined : Icons.person_add_outlined,
+                        color: AppTheme.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isEditMode ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản mới',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Điền thông tin tài khoản nhân sự hệ thống',
+                            style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-              // Password (chỉ bắt buộc khi Thêm mới)
-              if (!isEditMode) ...[
+                // Username (chỉ cho nhập khi Thêm mới)
                 TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Mật khẩu'),
-                  validator: (val) => val == null || val.length < 6 ? 'Mật khẩu phải từ 6 ký tự' : null,
+                  controller: _usernameController,
+                  enabled: !isEditMode,
+                  decoration: _buildInputDecoration('Tên đăng nhập (Username)', Icons.person_outline),
+                  validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng điền Username' : null,
                 ),
-                const SizedBox(height: 12),
-              ],
+                const SizedBox(height: 14),
 
-              // FullName
-              TextFormField(
-                controller: _fullNameController,
-                decoration: const InputDecoration(labelText: 'Họ tên nhân viên'),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng điền họ tên' : null,
-              ),
-              const SizedBox(height: 12),
-
-              // Email
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-
-              // Phone
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Số điện thoại'),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 12),
-
-              // Dropdown Chọn Vai trò (RoleId)
-              DropdownButtonFormField<int>(
-                isExpanded: true,
-                initialValue: const [1, 2, 3, 4, 5].contains(_selectedRoleId) ? _selectedRoleId : null,
-                decoration: const InputDecoration(labelText: 'Vai trò'),
-                items: const [
-                  DropdownMenuItem(value: 1, child: Text('Admin')),
-                  DropdownMenuItem(value: 2, child: Text('Quản lý chuỗi', overflow: TextOverflow.ellipsis)),
-                  DropdownMenuItem(value: 3, child: Text('Nhân viên Cửa hàng', overflow: TextOverflow.ellipsis)),
-                  DropdownMenuItem(value: 4, child: Text('Nhân viên Bếp', overflow: TextOverflow.ellipsis)),
-                  DropdownMenuItem(value: 5, child: Text('Điều phối cung ứng', overflow: TextOverflow.ellipsis)),
+                // Password (chỉ bắt buộc khi Thêm mới)
+                if (!isEditMode) ...[
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: _buildInputDecoration('Mật khẩu', Icons.lock_outline),
+                    validator: (val) => val == null || val.length < 6 ? 'Mật khẩu phải từ 6 ký tự' : null,
+                  ),
+                  const SizedBox(height: 14),
                 ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _selectedRoleId = val;
-                      // Reset các lựa chọn phụ thuộc khi đổi vai trò
-                      if (_selectedRoleId != 4 && _selectedRoleId != 5) _selectedKitchenId = null;
-                      if (_selectedRoleId != 3) _selectedStoreId = null;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
 
-              // Dropdown Chọn Bếp (Nếu vai trò là Nhân viên Bếp - RoleId = 4 hoặc Điều phối cung ứng - RoleId = 5)
-              if (_selectedRoleId == 4 || _selectedRoleId == 5)
+                // FullName
+                TextFormField(
+                  controller: _fullNameController,
+                  decoration: _buildInputDecoration('Họ tên nhân viên', Icons.badge_outlined),
+                  validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng điền họ tên' : null,
+                ),
+                const SizedBox(height: 14),
+
+                // Email
+                TextFormField(
+                  controller: _emailController,
+                  decoration: _buildInputDecoration('Email', Icons.email_outlined),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 14),
+
+                // Phone
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: _buildInputDecoration('Số điện thoại', Icons.phone_outlined),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 14),
+
+                // Dropdown Chọn Vai trò (RoleId)
                 DropdownButtonFormField<int>(
                   isExpanded: true,
-                  initialValue: adminProv.kitchens.any((k) => k.kitchenId == _selectedKitchenId) ? _selectedKitchenId : null,
-                  decoration: const InputDecoration(labelText: 'Chọn Bếp phân công'),
-                  items: adminProv.kitchens.map((k) {
-                    return DropdownMenuItem(
-                      value: k.kitchenId,
-                      child: Text(k.kitchenName, overflow: TextOverflow.ellipsis),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedKitchenId = val),
-                  validator: (val) => val == null ? 'Vui lòng chọn bếp trung tâm' : null,
+                  value: const [1, 2, 3, 4, 5].contains(_selectedRoleId) ? _selectedRoleId : null,
+                  decoration: _buildInputDecoration('Vai trò', Icons.assignment_ind_outlined),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text('Admin')),
+                    DropdownMenuItem(value: 2, child: Text('Quản lý chuỗi', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: 3, child: Text('Nhân viên Cửa hàng', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: 4, child: Text('Nhân viên Bếp', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: 5, child: Text('Điều phối cung ứng', overflow: TextOverflow.ellipsis)),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _selectedRoleId = val;
+                        // Reset các lựa chọn phụ thuộc khi đổi vai trò
+                        if (_selectedRoleId != 4 && _selectedRoleId != 5) _selectedKitchenId = null;
+                        if (_selectedRoleId != 3) _selectedStoreId = null;
+                      });
+                    }
+                  },
                 ),
+                const SizedBox(height: 14),
 
-              // Dropdown Chọn Cửa hàng (Nếu vai trò là Nhân viên Cửa hàng - RoleId = 3)
-              if (_selectedRoleId == 3)
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: adminProv.stores.any((s) => s.storeId == _selectedStoreId) ? _selectedStoreId : null,
-                  decoration: const InputDecoration(labelText: 'Chọn Cửa hàng phân công'),
-                  items: adminProv.stores.map((s) {
-                    return DropdownMenuItem(
-                      value: s.storeId,
-                      child: Text(s.storeName, overflow: TextOverflow.ellipsis),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedStoreId = val),
-                  validator: (val) => val == null ? 'Vui lòng chọn cửa hàng franchise' : null,
+                // Dropdown Chọn Bếp (Nếu vai trò là Nhân viên Bếp - RoleId = 4 hoặc Điều phối cung ứng - RoleId = 5)
+                if (_selectedRoleId == 4 || _selectedRoleId == 5) ...[
+                  DropdownButtonFormField<int>(
+                    isExpanded: true,
+                    value: adminProv.kitchens.any((k) => k.kitchenId == _selectedKitchenId) ? _selectedKitchenId : null,
+                    decoration: _buildInputDecoration('Chọn Bếp phân công', Icons.kitchen_outlined),
+                    items: adminProv.kitchens.map((k) {
+                      return DropdownMenuItem(
+                        value: k.kitchenId,
+                        child: Text(k.kitchenName, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedKitchenId = val),
+                    validator: (val) => val == null ? 'Vui lòng chọn bếp trung tâm' : null,
+                  ),
+                  const SizedBox(height: 14),
+                ],
+
+                // Dropdown Chọn Cửa hàng (Nếu vai trò là Nhân viên Cửa hàng - RoleId = 3)
+                if (_selectedRoleId == 3) ...[
+                  DropdownButtonFormField<int>(
+                    isExpanded: true,
+                    value: adminProv.stores.any((s) => s.storeId == _selectedStoreId) ? _selectedStoreId : null,
+                    decoration: _buildInputDecoration('Chọn Cửa hàng phân công', Icons.store_mall_directory_outlined),
+                    items: adminProv.stores.map((s) {
+                      return DropdownMenuItem(
+                        value: s.storeId,
+                        child: Text(s.storeName, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedStoreId = val),
+                    validator: (val) => val == null ? 'Vui lòng chọn cửa hàng franchise' : null,
+                  ),
+                  const SizedBox(height: 14),
+                ],
+
+                if (isEditMode) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: SwitchListTile(
+                      title: const Text('Trạng thái hoạt động', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary)),
+                      value: _isActive,
+                      activeColor: AppTheme.secondary,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      onChanged: (val) => setState(() => _isActive = val),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ] else ...[
+                  const SizedBox(height: 10),
+                ],
+
+                // Action buttons Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        child: const Text('Hủy', style: TextStyle(color: AppTheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          final provider = context.read<AdminProvider>();
+                          
+                          // Xây dựng DTO dữ liệu
+                          final userData = {
+                            'fullName': _fullNameController.text.trim(),
+                            'email': _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+                            'phoneNumber': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+                            'roleId': _selectedRoleId,
+                            'kitchenId': _selectedKitchenId,
+                            'storeId': _selectedStoreId,
+                            'isActive': _isActive,
+                          };
+
+                          bool success;
+                          if (isEditMode) {
+                            success = await provider.editUser(widget.user!.userId, userData);
+                          } else {
+                            // Đối với tạo mới, đẩy thêm trường username và password
+                            userData['username'] = _usernameController.text.trim();
+                            userData['password'] = _passwordController.text;
+                            success = await provider.addUser(userData);
+                          }
+
+                          if (mounted) {
+                            if (success) {
+                              Navigator.pop(context);
+                              widget.onSaved();
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEditMode ? 'Cập nhật thành công!' : 'Tạo tài khoản thành công!')));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? 'Có lỗi xảy ra!')));
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Lưu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
                 ),
-
-              if (isEditMode) ...[
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  title: const Text('Trạng thái hoạt động'),
-                  value: _isActive,
-                  onChanged: (val) => setState(() => _isActive = val),
-                )
-              ]
-            ],
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Hủy'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            if (!_formKey.currentState!.validate()) return;
-
-            final provider = context.read<AdminProvider>();
-            
-            // Xây dựng DTO dữ liệu
-            final userData = {
-              'fullName': _fullNameController.text.trim(),
-              'email': _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-              'phoneNumber': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-              'roleId': _selectedRoleId,
-              'kitchenId': _selectedKitchenId,
-              'storeId': _selectedStoreId,
-              'isActive': _isActive,
-            };
-
-            bool success;
-            if (isEditMode) {
-              success = await provider.editUser(widget.user!.userId, userData);
-            } else {
-              // Đối với tạo mới, đẩy thêm trường username và password
-              userData['username'] = _usernameController.text.trim();
-              userData['password'] = _passwordController.text;
-              success = await provider.addUser(userData);
-            }
-
-            if (mounted) {
-              if (success) {
-                Navigator.pop(context);
-                widget.onSaved();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEditMode ? 'Cập nhật thành công!' : 'Tạo tài khoản thành công!')));
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? 'Có lỗi xảy ra!')));
-              }
-            }
-          },
-          child: const Text('Lưu'),
-        ),
-      ],
     );
   }
 }

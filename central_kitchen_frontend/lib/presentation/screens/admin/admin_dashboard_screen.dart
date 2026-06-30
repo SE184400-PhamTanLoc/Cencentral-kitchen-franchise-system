@@ -58,7 +58,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: AppTheme.primaryContainer,
                     child: Text(
                       _adminAvatarInitial(auth.currentUser?.fullName),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -68,16 +68,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   subtitle: Text(auth.currentUser?.roleName ?? 'System Admin'),
                 ),
                 const SizedBox(height: 8),
-                _AdminMenuTile(
-                  icon: Icons.chat_bubble_outline,
-                  title: 'Nhắn tin nội bộ',
-                  subtitle: 'Trao đổi với nhân viên',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    Navigator.of(context).pushNamed('/chat');
-                  },
-                ),
-                const SizedBox(height: 10),
+
                 _AdminMenuTile(
                   icon: Icons.logout_outlined,
                   title: 'Đăng xuất',
@@ -107,15 +98,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
         toolbarHeight: 78,
+        centerTitle: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Xin chào, ${authProv.currentUser?.fullName ?? 'Admin'}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primary),
             ),
             const SizedBox(height: 3),
             const Text(
@@ -142,7 +133,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               padding: const EdgeInsets.only(right: 20),
               child: CircleAvatar(
                 radius: 18,
-                backgroundColor: AppTheme.primary,
+                backgroundColor: AppTheme.primaryContainer,
                 child: Text(
                   _adminAvatarInitial(authProv.currentUser?.fullName),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -151,6 +142,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
         ],
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.outlineVariant, width: 1),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -238,13 +232,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           )
         ],
       ),
@@ -270,13 +264,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.015),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            )
+          ],
         ),
         child: Row(
           children: [
@@ -327,12 +328,12 @@ class _AdminMenuTile extends StatelessWidget {
     final color = danger ? AppTheme.error : AppTheme.primary;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: color.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withOpacity(0.1)),
         ),
         child: Row(
