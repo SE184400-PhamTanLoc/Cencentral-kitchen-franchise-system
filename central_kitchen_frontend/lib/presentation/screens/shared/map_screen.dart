@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../business/providers/auth_provider.dart';
 import '../../../business/providers/delivery_chat_provider.dart';
 import '../../../business/providers/cart_order_provider.dart';
+import '../../../data/models/delivery_log_model.dart';
 import '../../../data/models/order_model.dart';
 import '../../../core/constants/app_theme.dart';
 
@@ -18,17 +19,21 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
+  final Distance _distance = const Distance();
   int? _selectedOrderId;
   bool _isTracking = false;
   bool _isInit = true;
+  String? _lastRouteRequestKey;
 
-  // Mock routes coordinates for testing (Kitchen -> Store)
-  final List<LatLng> _mockRoute = const [
-    LatLng(10.762622, 106.660172), // Central Kitchen (Start)
-    LatLng(10.767622, 106.666172), // Step 1
-    LatLng(10.772622, 106.672172), // Step 2
-    LatLng(10.777622, 106.678172), // Step 3
-    LatLng(10.782622, 106.684172), // Franchise Store (End)
+  static const LatLng _defaultOrigin = LatLng(10.762622, 106.660172);
+  static const LatLng _destinationPoint = LatLng(10.782622, 106.684172);
+  static const List<LatLng> _fallbackRoute = [
+    _defaultOrigin,
+    LatLng(10.764740, 106.662530),
+    LatLng(10.768420, 106.666930),
+    LatLng(10.772550, 106.671680),
+    LatLng(10.776700, 106.677920),
+    _destinationPoint,
   ];
   int _currentMockStep = 0;
 
@@ -37,16 +42,17 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // Save reference for dispose
     _deliveryChatProvider = context.read<DeliveryChatProvider>();
 
     if (_isInit) {
       final auth = context.read<AuthProvider>();
       final cart = context.read<CartOrderProvider>();
-      
+
       // Lấy tham số truyền vào (nếu có)
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       final int? initialOrderId = args?['orderId'];
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -62,7 +68,8 @@ class _MapScreenState extends State<MapScreen> {
           });
         } else {
           // Load orders to select from
-          if (auth.userRole == 'KITCHEN_STAFF' || auth.userRole == 'SUPPLY_COORDINATOR') {
+          if (auth.userRole == 'KITCHEN_STAFF' ||
+              auth.userRole == 'SUPPLY_COORDINATOR') {
             cart.loadOrdersAsync(1).then((_) {
               _selectFirstOrder(cart);
             });
@@ -91,7 +98,14 @@ class _MapScreenState extends State<MapScreen> {
   void _startMonitoring() {
     if (_selectedOrderId == null) return;
     final deliveryChat = context.read<DeliveryChatProvider>();
-    deliveryChat.loadLatestLocationAsync(_selectedOrderId!);
+    deliveryChat.loadLatestLocationAsync(_selectedOrderId!).then((_) {
+      if (!mounted) return;
+      final latestLoc = deliveryChat.latestLocation;
+      final routeOrigin = latestLoc != null
+          ? LatLng(latestLoc.latitude, latestLoc.longitude)
+          : _defaultOrigin;
+      _refreshRoute(routeOrigin);
+    });
     deliveryChat.startLocationPolling(_selectedOrderId!);
   }
 
@@ -106,6 +120,81 @@ class _MapScreenState extends State<MapScreen> {
   // Move map camera to driver's position
   void _moveCamera(double lat, double lng) {
     _mapController.move(LatLng(lat, lng), 15.0);
+  }
+
+  Future<void> _refreshRoute(LatLng origin) async {
+    final deliveryChat = context.read<DeliveryChatProvider>();
+    final requestKey =
+        '${origin.latitude.toStringAsFixed(5)},${origin.longitude.toStringAsFixed(5)}';
+    if (_lastRouteRequestKey == requestKey) return;
+    _lastRouteRequestKey = requestKey;
+
+    await deliveryChat.resolveRouteAsync(
+      originLatitude: origin.latitude,
+      originLongitude: origin.longitude,
+      destinationLatitude: _destinationPoint.latitude,
+      destinationLongitude: _destinationPoint.longitude,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      final maxIndex = _simulationSteps(deliveryChat).length - 1;
+      if (maxIndex < 0) {
+        _currentMockStep = 0;
+      } else if (_currentMockStep > maxIndex) {
+        _currentMockStep = maxIndex;
+      }
+    });
+  }
+
+  List<LatLng> _displayRoute(DeliveryChatProvider deliveryChat) {
+    final route = deliveryChat.activeRoute;
+    return route.length >= 2 ? route : _fallbackRoute;
+  }
+
+  List<LatLng> _simulationSteps(DeliveryChatProvider deliveryChat) {
+    final route = _displayRoute(deliveryChat);
+    if (route.length <= 5) return route;
+
+    const stepCount = 5;
+    final lastIndex = route.length - 1;
+    final checkpoints = <LatLng>[];
+
+    for (var i = 0; i < stepCount; i++) {
+      final ratio = i / (stepCount - 1);
+      final index = (lastIndex * ratio).round().clamp(0, lastIndex);
+      final point = route[index];
+      final isDuplicate =
+          checkpoints.isNotEmpty &&
+          _distance.as(LengthUnit.Meter, checkpoints.last, point) < 1;
+      if (!isDuplicate) {
+        checkpoints.add(point);
+      }
+    }
+
+    if (checkpoints.isEmpty ||
+        !_isNearPoint(
+          checkpoints.last,
+          _destinationPoint,
+          toleranceMeters: 5,
+        )) {
+      checkpoints.add(_destinationPoint);
+    }
+
+    return checkpoints;
+  }
+
+  bool _isNearPoint(LatLng a, LatLng b, {double toleranceMeters = 20}) {
+    return _distance.as(LengthUnit.Meter, a, b) <= toleranceMeters;
+  }
+
+  bool _hasArrived(DeliveryLogModel? latestLoc) {
+    if (latestLoc == null) return false;
+    return _isNearPoint(
+      LatLng(latestLoc.latitude, latestLoc.longitude),
+      _destinationPoint,
+      toleranceMeters: 80,
+    );
   }
 
   Future<void> _startGpsTracking() async {
@@ -147,7 +236,10 @@ class _MapScreenState extends State<MapScreen> {
 
     if (_selectedOrderId == null) return;
 
-    final targetCoords = _mockRoute[stepIndex];
+    final simulationSteps = _simulationSteps(deliveryChat);
+    if (stepIndex >= simulationSteps.length) return;
+
+    final targetCoords = simulationSteps[stepIndex];
     setState(() {
       _currentMockStep = stepIndex;
     });
@@ -160,34 +252,82 @@ class _MapScreenState extends State<MapScreen> {
     );
 
     _moveCamera(targetCoords.latitude, targetCoords.longitude);
+    await _refreshRoute(targetCoords);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Giả lập vị trí: Bước ${stepIndex + 1}/${_mockRoute.length}')),
+      SnackBar(
+        content: Text(
+          'Giả lập vị trí: Bước ${stepIndex + 1}/${simulationSteps.length}',
+        ),
+      ),
     );
   }
 
   // Cấu hình màu sắc & nhãn trạng thái đơn hàng (giống Grab/Shopee)
-  static const Map<String, ({Color color, IconData icon, String label})> _statusConfig = {
-    'PENDING': (color: Color(0xFFF59E0B), icon: Icons.hourglass_top_rounded, label: 'Chờ duyệt'),
-    'APPROVED': (color: Color(0xFF0058BE), icon: Icons.check_circle_outline_rounded, label: 'Đã duyệt'),
-    'DISPATCHED': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
-    'DELIVERING': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
-    'SHIPPING': (color: Color(0xFF0058BE), icon: Icons.local_shipping_rounded, label: 'Đang giao'),
-    'SHIPPED': (color: Color(0xFF047857), icon: Icons.done_all_rounded, label: 'Đã tới nơi'),
-    'COMPLETED': (color: Color(0xFF10B981), icon: Icons.task_alt_rounded, label: 'Đã nhận'),
-    'DELIVERED': (color: Color(0xFF10B981), icon: Icons.task_alt_rounded, label: 'Đã nhận'),
-    'CANCELLED': (color: Color(0xFFEF4444), icon: Icons.cancel_rounded, label: 'Đã hủy'),
+  static const Map<String, ({Color color, IconData icon, String label})>
+  _statusConfig = {
+    'PENDING': (
+      color: Color(0xFFF59E0B),
+      icon: Icons.hourglass_top_rounded,
+      label: 'Chờ duyệt',
+    ),
+    'APPROVED': (
+      color: Color(0xFF0058BE),
+      icon: Icons.check_circle_outline_rounded,
+      label: 'Đã duyệt',
+    ),
+    'DISPATCHED': (
+      color: Color(0xFF0058BE),
+      icon: Icons.local_shipping_rounded,
+      label: 'Đang giao',
+    ),
+    'DELIVERING': (
+      color: Color(0xFF0058BE),
+      icon: Icons.local_shipping_rounded,
+      label: 'Đang giao',
+    ),
+    'SHIPPING': (
+      color: Color(0xFF0058BE),
+      icon: Icons.local_shipping_rounded,
+      label: 'Đang giao',
+    ),
+    'SHIPPED': (
+      color: Color(0xFF047857),
+      icon: Icons.done_all_rounded,
+      label: 'Đã tới nơi',
+    ),
+    'COMPLETED': (
+      color: Color(0xFF10B981),
+      icon: Icons.task_alt_rounded,
+      label: 'Đã nhận',
+    ),
+    'DELIVERED': (
+      color: Color(0xFF10B981),
+      icon: Icons.task_alt_rounded,
+      label: 'Đã nhận',
+    ),
+    'CANCELLED': (
+      color: Color(0xFFEF4444),
+      icon: Icons.cancel_rounded,
+      label: 'Đã hủy',
+    ),
   };
 
   ({Color color, IconData icon, String label}) _statusInfo(String status) {
     return _statusConfig[status.toUpperCase()] ??
-        (color: AppTheme.onSurfaceVariant, icon: Icons.info_outline_rounded, label: status);
+        (
+          color: AppTheme.onSurfaceVariant,
+          icon: Icons.info_outline_rounded,
+          label: status,
+        );
   }
 
   /// Sinh địa chỉ người nhận hiển thị (đơn hàng không kèm address nên dùng tên cửa hàng).
   String _recipientAddress(OrderSummaryModel? order) {
     if (order == null) return 'Chưa chọn đơn hàng';
-    final name = order.storeName.isNotEmpty ? order.storeName : 'Cửa hàng #${order.storeId}';
+    final name = order.storeName.isNotEmpty
+        ? order.storeName
+        : 'Cửa hàng #${order.storeId}';
     return '$name (Mã CH #${order.storeId})';
   }
 
@@ -197,6 +337,15 @@ class _MapScreenState extends State<MapScreen> {
     final cart = context.watch<CartOrderProvider>();
     final deliveryChat = context.watch<DeliveryChatProvider>();
     final latestLoc = deliveryChat.latestLocation;
+    final routePoints = _displayRoute(deliveryChat);
+    final simulationSteps = _simulationSteps(deliveryChat);
+
+    if (latestLoc != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _refreshRoute(LatLng(latestLoc.latitude, latestLoc.longitude));
+      });
+    }
 
     // Tìm đơn hàng đang được chọn để lấy trạng thái & địa chỉ người nhận
     OrderSummaryModel? selectedOrder;
@@ -208,13 +357,19 @@ class _MapScreenState extends State<MapScreen> {
     }
     final statusInfo = _statusInfo(selectedOrder?.orderStatus ?? 'PENDING');
     final statusUpper = selectedOrder?.orderStatus.toUpperCase() ?? '';
-    final isDelivering = statusUpper == 'DELIVERING' || statusUpper == 'SHIPPING' || statusUpper == 'DISPATCHED';
-    final isDriver = auth.userRole == 'SUPPLY_COORDINATOR' || auth.userRole == 'KITCHEN_STAFF' || auth.userRole == 'MANAGER' || auth.userRole == 'ADMIN';
-    final hasArrived = (_currentMockStep == _mockRoute.length - 1) ||
-        (latestLoc != null &&
-            (latestLoc.latitude - _mockRoute.last.latitude).abs() < 0.001 &&
-            (latestLoc.longitude - _mockRoute.last.longitude).abs() < 0.001);
-
+    final isDelivering =
+        statusUpper == 'DELIVERING' ||
+        statusUpper == 'SHIPPING' ||
+        statusUpper == 'DISPATCHED';
+    final isDriver =
+        auth.userRole == 'SUPPLY_COORDINATOR' ||
+        auth.userRole == 'KITCHEN_STAFF' ||
+        auth.userRole == 'MANAGER' ||
+        auth.userRole == 'ADMIN';
+    final hasArrived =
+        (simulationSteps.isNotEmpty &&
+            _currentMockStep == simulationSteps.length - 1) ||
+        _hasArrived(latestLoc);
 
     // Build markers for flutter_map
     final List<Marker> mapMarkers = [];
@@ -234,16 +389,30 @@ class _MapScreenState extends State<MapScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Text(
-                  latestLoc.driverName.isNotEmpty ? latestLoc.driverName : 'Tài xế',
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                  latestLoc.driverName.isNotEmpty
+                      ? latestLoc.driverName
+                      : 'Tài xế',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primary,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
-              const Icon(Icons.local_shipping_rounded, color: Colors.blue, size: 36),
+              const Icon(
+                Icons.local_shipping_rounded,
+                color: Colors.blue,
+                size: 36,
+              ),
             ],
           ),
         ),
@@ -253,7 +422,7 @@ class _MapScreenState extends State<MapScreen> {
     // Add destination marker (Franchise Store)
     mapMarkers.add(
       Marker(
-        point: const LatLng(10.782622, 106.684172),
+        point: _destinationPoint,
         width: 120,
         height: 80,
         child: Column(
@@ -265,12 +434,20 @@ class _MapScreenState extends State<MapScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
               child: const Text(
                 'Cửa hàng',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -291,11 +468,19 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             const Text(
               'Bản đồ & Định vị',
-              style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(
+                color: AppTheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
             Text(
               'Vai trò: ${auth.userRole ?? "N/A"} • Giám sát giao hàng',
-              style: const TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                color: AppTheme.onSurfaceVariant,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -311,7 +496,7 @@ class _MapScreenState extends State<MapScreen> {
             options: MapOptions(
               initialCenter: latestLoc != null
                   ? LatLng(latestLoc.latitude, latestLoc.longitude)
-                  : const LatLng(10.762622, 106.660172),
+                  : _defaultOrigin,
               initialZoom: 14.0,
             ),
             children: [
@@ -322,18 +507,16 @@ class _MapScreenState extends State<MapScreen> {
               PolylineLayer(
                 polylines: <Polyline<Object>>[
                   Polyline<Object>(
-                    points: _mockRoute,
+                    points: routePoints,
                     color: AppTheme.secondary.withOpacity(0.5),
                     strokeWidth: 4.0,
                   ),
                 ],
               ),
-              MarkerLayer(
-                markers: mapMarkers,
-              ),
+              MarkerLayer(markers: mapMarkers),
             ],
           ),
- 
+
           // 2. Order Selector Overlay (Top)
           Positioned(
             top: 16,
@@ -350,7 +533,7 @@ class _MapScreenState extends State<MapScreen> {
                     color: Colors.black.withOpacity(0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
-                  )
+                  ),
                 ],
               ),
               child: Row(
@@ -361,22 +544,41 @@ class _MapScreenState extends State<MapScreen> {
                       color: AppTheme.primaryContainer.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.receipt_long_rounded, color: AppTheme.primary, size: 20),
+                    child: const Icon(
+                      Icons.receipt_long_rounded,
+                      color: AppTheme.primary,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: cart.orders.isEmpty
-                        ? const Text('Chưa có đơn hàng nào', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.onSurface))
+                        ? const Text(
+                            'Chưa có đơn hàng nào',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.onSurface,
+                            ),
+                          )
                         : DropdownButtonHideUnderline(
                             child: DropdownButton<int>(
                               isExpanded: true,
-                              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.primary),
+                              icon: const Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: AppTheme.primary,
+                              ),
                               value: _selectedOrderId,
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.onSurface, fontSize: 14),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.onSurface,
+                                fontSize: 14,
+                              ),
                               items: cart.orders.map((order) {
                                 return DropdownMenuItem<int>(
                                   value: order.orderId,
-                                  child: Text('${order.orderCode} - ${order.orderStatus}'),
+                                  child: Text(
+                                    '${order.orderCode} - ${order.orderStatus}',
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (val) {
@@ -385,6 +587,10 @@ class _MapScreenState extends State<MapScreen> {
                                     _selectedOrderId = val;
                                     _currentMockStep = 0;
                                   });
+                                  _lastRouteRequestKey = null;
+                                  context
+                                      .read<DeliveryChatProvider>()
+                                      .clearRoute();
                                   _startMonitoring();
                                 }
                               },
@@ -395,7 +601,7 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
- 
+
           // 3. Thẻ thông tin đơn hàng (Trạng thái - Người nhận - Vị trí xe)
           Positioned(
             top: 96,
@@ -412,7 +618,7 @@ class _MapScreenState extends State<MapScreen> {
                     color: Colors.black.withOpacity(0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -424,11 +630,18 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       const Text(
                         'Trạng thái đơn:',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.onSurfaceVariant),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: statusInfo.color.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(999),
@@ -436,11 +649,19 @@ class _MapScreenState extends State<MapScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(statusInfo.icon, size: 14, color: statusInfo.color),
+                            Icon(
+                              statusInfo.icon,
+                              size: 14,
+                              color: statusInfo.color,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               statusInfo.label,
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusInfo.color),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: statusInfo.color,
+                              ),
                             ),
                           ],
                         ),
@@ -463,9 +684,10 @@ class _MapScreenState extends State<MapScreen> {
                     title: 'Vị trí xe hiện tại',
                     content: latestLoc != null
                         ? '${latestLoc.latitude.toStringAsFixed(5)}, ${latestLoc.longitude.toStringAsFixed(5)}'
-                            '  •  ${_formatTime(latestLoc.recordedAt)}'
+                              '  •  ${_formatTime(latestLoc.recordedAt)}'
                         : 'Chưa có dữ liệu GPS',
-                    subtitle: latestLoc != null && latestLoc.driverName.isNotEmpty
+                    subtitle:
+                        latestLoc != null && latestLoc.driverName.isNotEmpty
                         ? 'Tài xế: ${latestLoc.driverName}'
                         : null,
                   ),
@@ -473,9 +695,9 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
- 
+
           // 4. Loader Overlay
-          if (deliveryChat.isLocationLoading)
+          if (deliveryChat.isLocationLoading || deliveryChat.isRouteLoading)
             Positioned.fill(
               child: Container(
                 color: Colors.black.withOpacity(0.2),
@@ -484,7 +706,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
-             
+
           // 5. Simulation / Driver Controller Panel (Floating Bottom)
           Positioned(
             bottom: 24,
@@ -501,7 +723,7 @@ class _MapScreenState extends State<MapScreen> {
                     color: Colors.black.withOpacity(0.06),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -512,29 +734,60 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.settings_remote_rounded, color: AppTheme.primary, size: 16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.settings_remote_rounded,
+                          color: AppTheme.primary,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       const Text(
                         'ĐIỀU PHỐI & GIẢ LẬP GPS',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: AppTheme.primary, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                          color: AppTheme.primary,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Real GPS update buttons
                   ElevatedButton.icon(
-                    onPressed: _isTracking ? _stopGpsTracking : _startGpsTracking,
+                    onPressed: _isTracking
+                        ? _stopGpsTracking
+                        : _startGpsTracking,
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 44),
-                      backgroundColor: _isTracking ? AppTheme.error : AppTheme.primaryContainer,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      backgroundColor: _isTracking
+                          ? AppTheme.error
+                          : AppTheme.primaryContainer,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       elevation: 0,
                     ),
-                    icon: Icon(_isTracking ? Icons.gps_off_rounded : Icons.gps_fixed_rounded, color: Colors.white, size: 18),
-                    label: Text(_isTracking ? 'DỪNG PHÁT GPS' : 'PHÁT GPS THỰC TẾ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5)),
+                    icon: Icon(
+                      _isTracking
+                          ? Icons.gps_off_rounded
+                          : Icons.gps_fixed_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _isTracking ? 'DỪNG PHÁT GPS' : 'PHÁT GPS THỰC TẾ',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
                   if (isDriver && isDelivering) ...[
                     const SizedBox(height: 8),
@@ -545,7 +798,9 @@ class _MapScreenState extends State<MapScreen> {
                               if (!hasArrived) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Vui lòng di chuyển xe đến cột mốc Cửa hàng (CH) trên bản đồ trước khi xác nhận!'),
+                                    content: Text(
+                                      'Vui lòng di chuyển xe đến cột mốc Cửa hàng (CH) trên bản đồ trước khi xác nhận!',
+                                    ),
                                     backgroundColor: Colors.amber,
                                   ),
                                 );
@@ -559,14 +814,19 @@ class _MapScreenState extends State<MapScreen> {
                                 if (success) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Xác nhận giao hàng tới nơi thành công! Trạng thái: SHIPPED.'),
+                                      content: Text(
+                                        'Xác nhận giao hàng tới nơi thành công! Trạng thái: SHIPPED.',
+                                      ),
                                       backgroundColor: Colors.green,
                                     ),
                                   );
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(cart.errorMessage ?? 'Cập nhật thất bại.'),
+                                      content: Text(
+                                        cart.errorMessage ??
+                                            'Cập nhật thất bại.',
+                                      ),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
@@ -575,37 +835,65 @@ class _MapScreenState extends State<MapScreen> {
                             },
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 44),
-                        backgroundColor: hasArrived ? Colors.orange.shade800 : Colors.grey.shade500,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: hasArrived
+                            ? Colors.orange.shade800
+                            : Colors.grey.shade500,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         elevation: 0,
                       ),
-                      icon: Icon(hasArrived ? Icons.done_all_rounded : Icons.location_off_rounded, color: Colors.white, size: 18),
+                      icon: Icon(
+                        hasArrived
+                            ? Icons.done_all_rounded
+                            : Icons.location_off_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                       label: Text(
-                        hasArrived ? 'XÁC NHẬN ĐÃ ĐẾN CỬA HÀNG' : 'VUI LÒNG DI CHUYỂN TỚI CỬA HÀNG',
-                        style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.white, fontSize: 13),
+                        hasArrived
+                            ? 'XÁC NHẬN ĐÃ ĐẾN CỬA HÀNG'
+                            : 'VUI LÒNG DI CHUYỂN TỚI CỬA HÀNG',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
                   const SizedBox(height: 12),
- 
+
                   // Manual Step-by-Step simulator
                   Text(
                     'Cột mốc lộ trình (Dành cho Tester):',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.onSurfaceVariant.withOpacity(0.8)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.onSurfaceVariant.withOpacity(0.8),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: List.generate(_mockRoute.length, (index) {
-                        final isCurrent = latestLoc != null &&
-                            latestLoc.latitude == _mockRoute[index].latitude &&
-                            latestLoc.longitude == _mockRoute[index].longitude;
-                        
+                      children: List.generate(simulationSteps.length, (index) {
+                        final point = simulationSteps[index];
+                        final isCurrent =
+                            latestLoc != null &&
+                            _isNearPoint(
+                              LatLng(latestLoc.latitude, latestLoc.longitude),
+                              point,
+                              toleranceMeters: 30,
+                            );
+
                         String stepName = 'B ${index + 1}';
                         if (index == 0) stepName = 'Bếp';
-                        if (index == _mockRoute.length - 1) stepName = 'CH';
- 
+                        if (index == simulationSteps.length - 1) {
+                          stepName = 'CH';
+                        }
+
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: AnimatedContainer(
@@ -618,11 +906,18 @@ class _MapScreenState extends State<MapScreen> {
                               backgroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(color: (isCurrent || _currentMockStep == index) ? AppTheme.primaryContainer : AppTheme.outlineVariant),
+                                side: BorderSide(
+                                  color:
+                                      (isCurrent || _currentMockStep == index)
+                                      ? AppTheme.primaryContainer
+                                      : AppTheme.outlineVariant,
+                                ),
                               ),
                               showCheckmark: false,
                               labelStyle: TextStyle(
-                                color: (isCurrent || _currentMockStep == index) ? Colors.white : AppTheme.primary,
+                                color: (isCurrent || _currentMockStep == index)
+                                    ? Colors.white
+                                    : AppTheme.primary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -667,18 +962,29 @@ class _MapScreenState extends State<MapScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.onSurfaceVariant),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 content,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.onSurface),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.onSurface,
+                ),
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant.withOpacity(0.8)),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.onSurfaceVariant.withOpacity(0.8),
+                  ),
                 ),
               ],
             ],
@@ -689,7 +995,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   String _formatTime(DateTime? dt) {
-
     if (dt == null) return '--:--:--';
     final localDt = dt.toLocal();
     final hour = localDt.hour.toString().padLeft(2, '0');
