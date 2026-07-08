@@ -36,6 +36,13 @@ public static class DatabaseSeeder
                 logger.LogWarning("Tables might already exist, skipping CreateTablesAsync.");
             }
 
+            // Kiểm tra nếu DB đã có dữ liệu (ví dụ đã có Roles) thì bỏ qua Seed
+            if (await context.Roles.AnyAsync())
+            {
+                logger.LogInformation("Database already has data. Skipping truncate and seed.");
+                return;
+            }
+
             // Clear existing data in correct order to prevent FK violations
             try
             {
