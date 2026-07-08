@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Central_kitchen_API;
 
@@ -23,6 +24,18 @@ public static class DatabaseSeeder
 
         try
         {
+            logger.LogInformation("Ensuring database and tables exist...");
+            try 
+            {
+                var databaseCreator = context.Database.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>();
+                await databaseCreator.CreateTablesAsync();
+                logger.LogInformation("Tables created successfully.");
+            }
+            catch
+            {
+                logger.LogWarning("Tables might already exist, skipping CreateTablesAsync.");
+            }
+
             // Clear existing data in correct order to prevent FK violations
             try
             {

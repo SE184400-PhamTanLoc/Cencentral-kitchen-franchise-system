@@ -18,8 +18,19 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // ==================== DATABASE ====================
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Hỗ trợ đọc DATABASE_URL tự động từ Render
+var renderDbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+if (!string.IsNullOrEmpty(renderDbUrl))
+{
+    var uri = new Uri(renderDbUrl);
+    var userInfo = uri.UserInfo.Split(':');
+    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;TrustServerCertificate=True;";
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // ==================== DEPENDENCY INJECTION ====================
 // Repositories
@@ -131,15 +142,13 @@ var app = builder.Build();
 await DatabaseSeeder.SeedAsync(app.Services);
 
 // ==================== MIDDLEWARE PIPELINE ====================
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Central Kitchen API v1");
-    });
-}
-else
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Central Kitchen API v1");
+});
+
+if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
