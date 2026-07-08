@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import '../../data/datasources/delivery_chat_datasource.dart';
 import '../../data/models/chat_message_model.dart';
 import '../../data/models/delivery_log_model.dart';
@@ -33,11 +34,15 @@ class DeliveryChatProvider with ChangeNotifier {
   // Delivery State
   DeliveryLogModel? _latestLocation;
   bool _isLocationLoading = false;
+  bool _isRouteLoading = false;
   Timer? _locationTimer;
   StreamSubscription<Position>? _positionSubscription;
+  List<LatLng> _activeRoute = [];
 
   DeliveryLogModel? get latestLocation => _latestLocation;
   bool get isLocationLoading => _isLocationLoading;
+  bool get isRouteLoading => _isRouteLoading;
+  List<LatLng> get activeRoute => List.unmodifiable(_activeRoute);
 
   // ─── Chat Actions ─────────────────────────────────────────────
 
@@ -109,6 +114,35 @@ class DeliveryChatProvider with ChangeNotifier {
     });
   }
 
+  Future<void> resolveRouteAsync({
+    required double originLatitude,
+    required double originLongitude,
+    required double destinationLatitude,
+    required double destinationLongitude,
+  }) async {
+    _isRouteLoading = true;
+    notifyListeners();
+    try {
+      final route = await _datasource.getDrivingRoute(
+        originLatitude: originLatitude,
+        originLongitude: originLongitude,
+        destinationLatitude: destinationLatitude,
+        destinationLongitude: destinationLongitude,
+      );
+      _activeRoute = route;
+    } catch (_) {
+      _activeRoute = [];
+    }
+    _isRouteLoading = false;
+    notifyListeners();
+  }
+
+  void clearRoute() {
+    _activeRoute = [];
+    _isRouteLoading = false;
+    notifyListeners();
+  }
+
   void stopLocationPolling() {
     _locationTimer?.cancel();
     _locationTimer = null;
@@ -128,23 +162,24 @@ class DeliveryChatProvider with ChangeNotifier {
     if (permission == LocationPermission.deniedForever) return;
 
     _positionSubscription?.cancel();
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // update every 10 meters
-      ),
-    ).listen((Position position) async {
-      try {
-        final newLoc = await _datasource.updateLocation(
-          orderId: orderId,
-          driverId: driverId,
-          latitude: position.latitude,
-          longitude: position.longitude,
-        );
-        _latestLocation = newLoc;
-        notifyListeners();
-      } catch (_) {}
-    });
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10, // update every 10 meters
+          ),
+        ).listen((Position position) async {
+          try {
+            final newLoc = await _datasource.updateLocation(
+              orderId: orderId,
+              driverId: driverId,
+              latitude: position.latitude,
+              longitude: position.longitude,
+            );
+            _latestLocation = newLoc;
+            notifyListeners();
+          } catch (_) {}
+        });
   }
 
   // Manual trigger for mock/test GPS updates on emulator if geolocator stream isn't triggered
