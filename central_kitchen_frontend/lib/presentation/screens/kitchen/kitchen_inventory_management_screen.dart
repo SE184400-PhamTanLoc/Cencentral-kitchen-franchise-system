@@ -1738,7 +1738,7 @@ class _BomTab extends StatelessWidget {
                     storeName: order.storeName,
                     orderStatus: order.orderStatus,
                     createdAt: order.createdAt,
-                    totalAmount: 0.0,
+                    totalAmount: order.totalAmount,
                     itemCount: order.orderDetails.length,
                     onTap: () {
                       SharedOrderDetailsModal.show(

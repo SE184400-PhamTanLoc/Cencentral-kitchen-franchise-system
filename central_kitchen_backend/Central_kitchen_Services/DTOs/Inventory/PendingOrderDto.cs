@@ -9,6 +9,7 @@ public class PendingOrderDto
     public string OrderCode { get; set; } = null!;
     public int StoreId { get; set; }
     public string StoreName { get; set; } = null!;
+    public decimal TotalAmount { get; set; }
     public string OrderStatus { get; set; } = null!;
     public DateTime? CreatedAt { get; set; }
     public List<PendingOrderDetailDto> OrderDetails { get; set; } = new();

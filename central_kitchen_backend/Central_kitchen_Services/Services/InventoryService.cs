@@ -204,6 +204,7 @@ public class InventoryService : IInventoryService
             OrderCode = o.OrderCode,
             StoreId = o.StoreId,
             StoreName = o.Store.StoreName,
+            TotalAmount = o.TotalAmount,
             OrderStatus = o.OrderStatus,
             CreatedAt = o.CreatedAt,
             OrderDetails = o.OrderDetails.Select(od => new PendingOrderDetailDto

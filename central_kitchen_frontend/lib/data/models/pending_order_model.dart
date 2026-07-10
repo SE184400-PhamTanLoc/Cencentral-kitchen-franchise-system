@@ -3,6 +3,7 @@ class PendingOrderModel {
   final String orderCode;
   final int storeId;
   final String storeName;
+  final double totalAmount;
   final String orderStatus;
   final DateTime? createdAt;
   final List<PendingOrderDetailModel> orderDetails;
@@ -12,6 +13,7 @@ class PendingOrderModel {
     required this.orderCode,
     required this.storeId,
     required this.storeName,
+    required this.totalAmount,
     required this.orderStatus,
     this.createdAt,
     required this.orderDetails,
@@ -23,6 +25,7 @@ class PendingOrderModel {
       orderCode: json['orderCode'] ?? '',
       storeId: json['storeId'],
       storeName: json['storeName'] ?? '',
+      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
       orderStatus: json['orderStatus'] ?? '',
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
       orderDetails: (json['orderDetails'] as List<dynamic>?)
