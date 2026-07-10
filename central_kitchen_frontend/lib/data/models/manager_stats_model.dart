@@ -32,6 +32,7 @@ class ManagerPendingOrderModel {
   final String orderCode;
   final String storeName;
   final int storeId;
+  final int itemCount;
   final String orderStatus;
   final double totalAmount;
   final DateTime createdAt;
@@ -43,6 +44,7 @@ class ManagerPendingOrderModel {
     required this.orderCode,
     required this.storeName,
     required this.storeId,
+    required this.itemCount,
     required this.orderStatus,
     required this.totalAmount,
     required this.createdAt,
@@ -56,6 +58,7 @@ class ManagerPendingOrderModel {
       orderCode: json['orderCode'] ?? '',
       storeName: json['storeName'] ?? '',
       storeId: json['storeId'] ?? 0,
+      itemCount: json['itemCount'] ?? 0,
       orderStatus: json['orderStatus'] ?? '',
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),

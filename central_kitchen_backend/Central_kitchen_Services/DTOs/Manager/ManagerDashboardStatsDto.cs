@@ -18,6 +18,7 @@ public class ManagerPendingOrderDto
     public string OrderCode { get; set; } = string.Empty;
     public string StoreName { get; set; } = string.Empty;
     public int StoreId { get; set; }
+    public int ItemCount { get; set; }
     public string OrderStatus { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public DateTime CreatedAt { get; set; }

@@ -55,6 +55,7 @@ public class ManagerService : IManagerService
                 OrderCode = o.OrderCode,
                 StoreName = o.Store.StoreName,
                 StoreId = o.StoreId,
+                ItemCount = o.OrderDetails.Count,
                 OrderStatus = o.OrderStatus ?? string.Empty,
                 TotalAmount = o.TotalAmount,
                 CreatedAt = o.CreatedAt ?? DateTime.UtcNow,

@@ -680,7 +680,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                         orderStatus: order.orderStatus,
                         createdAt: order.createdAt,
                         totalAmount: order.totalAmount,
-                        itemCount: 0,
+                        itemCount: order.itemCount,
                         onTap: () {
                           SharedOrderDetailsModal.show(
                             context,
@@ -712,7 +712,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                           orderStatus: order.orderStatus,
                           createdAt: order.createdAt,
                           totalAmount: order.totalAmount,
-                          itemCount: 0,
+                          itemCount: order.itemCount,
                           onTap: () {
                             SharedOrderDetailsModal.show(
                               context,
