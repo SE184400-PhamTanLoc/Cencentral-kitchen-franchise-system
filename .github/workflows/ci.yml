@@ -40,6 +40,8 @@ jobs:
   build-frontend:
     name: Build & Test Frontend (Flutter)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: ./central_kitchen_frontend
@@ -63,11 +65,16 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload APK to Release
+        uses: ncipollo/release-action@v1
         with:
-          name: central-kitchen-app
-          path: central_kitchen_frontend/build/app/outputs/flutter-apk/app-release.apk
+          artifacts: "central_kitchen_frontend/build/app/outputs/flutter-apk/app-release.apk"
+          tag: "latest"
+          name: "Latest APK Build"
+          body: "Bản build APK tự động mới nhất từ nhánh nhánh hiện tại."
+          allowUpdates: true
+          makeLatest: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Uncomment if you have test files
       # - name: Run tests
