@@ -316,7 +316,7 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
     BuildContext hostContext,
     ProductionPlanModel plan,
   ) async {
-    final timestamp = DateTime.now().millisecondsSinceEpoch % 10000;
+    final timestamp = DateTime.now().millisecondsSinceEpoch % 1000000; // Lấy 6 số cuối để giảm thiểu trùng lặp
     final skuPart = (plan.outputSku ?? 'SKU').replaceAll(" ", "-").toUpperCase();
     final defaultBatchCode = 'BAT-$skuPart-${DateTime.now().toIso8601String().split("T").first.replaceAll("-", "")}-$timestamp';
     final batchCodeController = TextEditingController(text: defaultBatchCode);

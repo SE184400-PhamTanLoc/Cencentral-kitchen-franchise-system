@@ -640,9 +640,16 @@ public class InventoryService : IInventoryService
             CreatedAt = DateTime.UtcNow
         };
 
-        var created = await _batchRepository.AddAsync(newBatch);
-        var createdWithIncludes = await _batchRepository.GetByIdAsync(created.BatchId) ?? created;
-        return MapBatch(createdWithIncludes);
+        try
+        {
+            var created = await _batchRepository.AddAsync(newBatch);
+            var createdWithIncludes = await _batchRepository.GetByIdAsync(created.BatchId) ?? created;
+            return MapBatch(createdWithIncludes);
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new InvalidOperationException("Mã lô thành phẩm đã tồn tại hoặc có lỗi dữ liệu. Vui lòng thử lại với mã lô khác.", ex);
+        }
     }
 }
 
