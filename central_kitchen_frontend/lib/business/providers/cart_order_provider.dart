@@ -242,7 +242,7 @@ class CartOrderProvider with ChangeNotifier {
       );
       // Reload tồn kho và đơn hàng sau khi nhận hàng
       await loadStoreInventoryAsync(storeId);
-      await loadOrdersAsync(storeId);
+      await _refreshOrderState(orderId, storeId);
       _setLoading(false);
       return true;
     } catch (e) {
@@ -261,7 +261,7 @@ class CartOrderProvider with ChangeNotifier {
     _setError(null);
     try {
       await _datasource.arriveOrder(orderId: orderId);
-      await loadOrdersAsync(storeId);
+      await _refreshOrderState(orderId, storeId);
       _setLoading(false);
       return true;
     } catch (e) {
@@ -281,7 +281,7 @@ class CartOrderProvider with ChangeNotifier {
     _setError(null);
     try {
       await _datasource.cancelOrder(orderId: orderId, reason: reason);
-      await loadOrdersAsync(storeId);
+      await _refreshOrderState(orderId, storeId);
       _setLoading(false);
       return true;
     } catch (e) {
@@ -332,6 +332,17 @@ class CartOrderProvider with ChangeNotifier {
     } catch (_) {
       // Tồn kho không load được → không cần báo lỗi critical
     }
+  }
+
+  Future<void> _refreshOrderState(int orderId, int storeId) async {
+    final results = await Future.wait([
+      _datasource.getOrdersByStore(storeId),
+      _datasource.getOrderDetail(orderId),
+    ]);
+
+    _orders = results[0] as List<OrderSummaryModel>;
+    _selectedOrder = results[1] as OrderDetailModel;
+    notifyListeners();
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────

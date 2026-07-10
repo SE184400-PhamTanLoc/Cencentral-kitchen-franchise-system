@@ -609,12 +609,14 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
             child: Column(
               children: [
                 ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushNamed(
+                  onPressed: () async {
+                    await Navigator.pushNamed(
                       context,
                       '/map',
                       arguments: {'orderId': details.orderId},
                     );
+                    if (!mounted) return;
+                    await _reloadModalState(details.orderId, details.storeId);
                   },
                   icon: const Icon(Icons.map_rounded),
                   label: const Text('MỞ BẢN ĐỒ GPS', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -922,6 +924,9 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
           orderId: details.orderId,
           storeId: details.storeId,
         );
+    if (success) {
+      await _reloadModalState(details.orderId, details.storeId);
+    }
     setState(() => _isActionLoading = false);
 
     if (mounted) {
@@ -937,6 +942,15 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
           SnackBar(content: Text(errorMsg), backgroundColor: AppTheme.error),
         );
       }
+    }
+  }
+
+  Future<void> _reloadModalState(int orderId, int storeId) async {
+    await context.read<CartOrderProvider>().loadOrderDetailAsync(orderId);
+    await context.read<CartOrderProvider>().loadOrdersAsync(storeId);
+    await context.read<DeliveryChatProvider>().loadLatestLocationAsync(orderId);
+    if (widget.onRefresh != null) {
+      widget.onRefresh!();
     }
   }
 
