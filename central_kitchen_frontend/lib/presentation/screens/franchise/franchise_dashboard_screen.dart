@@ -43,10 +43,12 @@ class _FranchiseDashboardScreenState extends State<FranchiseDashboardScreen> {
 
     final storeId = auth.storeId;
     if (storeId != null) {
-      await cart.loadOrdersAsync(storeId);
-      await cart.loadStoreInventoryAsync(storeId);
-      await notif.loadNotificationsAsync();
-      await notif.loadCreditInfoAsync(storeId);
+      await Future.wait([
+        cart.loadOrdersAsync(storeId),
+        cart.loadStoreInventoryAsync(storeId),
+        notif.loadNotificationsAsync(),
+        notif.loadCreditInfoAsync(storeId),
+      ]);
     }
     await inventory.fetchIngredients();
   }

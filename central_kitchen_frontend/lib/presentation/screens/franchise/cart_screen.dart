@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../business/providers/cart_order_provider.dart';
@@ -81,13 +80,9 @@ class CartScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Blur layer
               Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                  child: Container(
-                    color: AppTheme.background.withOpacity(0.7),
-                  ),
+                child: Container(
+                  color: AppTheme.background.withOpacity(0.92),
                 ),
               ),
               // Main content
@@ -168,55 +163,46 @@ class CartScreen extends StatelessWidget {
         // 1. Delivery Progress Tracker Section
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.2),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.local_shipping_rounded, color: AppTheme.primary, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          remaining > 0
-                              ? 'Mua thêm ${_formatCurrency(remaining)} để nhận miễn phí vận chuyển!'
-                              : 'Chúc mừng! Đơn hàng của bạn được Miễn phí vận chuyển 🎉',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.onSurface),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        backgroundColor: AppTheme.primary.withOpacity(0.1),
-                        color: progress >= 1.0 ? const Color(0xFF16A34A) : AppTheme.primary,
-                      ),
+                    const Icon(Icons.local_shipping_rounded, color: AppTheme.primary, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      remaining > 0
+                          ? 'Mua thêm ${_formatCurrency(remaining)} để nhận miễn phí vận chuyển!'
+                          : 'Chúc mừng! Đơn hàng của bạn được Miễn phí vận chuyển 🎉',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.onSurface),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: AppTheme.primary.withOpacity(0.1),
+                    color: progress >= 1.0 ? const Color(0xFF16A34A) : AppTheme.primary,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-
-        // Items list & Recommendations scroll
         Expanded(
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Header Summary Row
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
@@ -236,8 +222,6 @@ class CartScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // Cart Items List
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 sliver: SliverList(
@@ -250,8 +234,6 @@ class CartScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // Recommendations section in Cart
               if (recommended.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
@@ -294,78 +276,72 @@ class CartScreen extends StatelessWidget {
 
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                    child: Container(
-                      width: 140,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.4),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.2),
+                child: Container(
+                  width: 140,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      (() {
+                        final imagePath = getIngredientImage(item.sku, item.name);
+                        if (imagePath != null) {
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.asset(imagePath, width: double.infinity, height: 65, fit: BoxFit.cover),
+                          );
+                        }
+                        return Container(
+                          width: double.infinity,
+                          height: 65,
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.inventory_2_rounded, size: 28, color: AppTheme.secondary),
+                        );
+                      })(),
+                      const Spacer(),
+                      Text(
+                        item.name,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.onSurface),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          (() {
-                            final imagePath = getIngredientImage(item.sku, item.name);
-                            if (imagePath != null) {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.asset(imagePath, width: double.infinity, height: 65, fit: BoxFit.cover),
-                              );
-                            }
-                            return Container(
-                              width: double.infinity,
-                              height: 65,
-                              decoration: BoxDecoration(
-                                color: AppTheme.secondary.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.inventory_2_rounded, size: 28, color: AppTheme.secondary),
+                      Text(
+                        '${_formatCurrency(item.unitPrice)} / ${item.unit}',
+                        style: TextStyle(fontSize: 10, color: AppTheme.primary.withOpacity(0.8), fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 28,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            cart.addItem(
+                              ingredientId: item.ingredientId,
+                              name: item.name,
+                              unit: item.unit,
+                              unitPrice: item.unitPrice,
                             );
-                          })(),
-                          const Spacer(),
-                          Text(
-                            item.name,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.onSurface),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: inCart ? const Color(0xFF16A34A) : AppTheme.primary,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            elevation: 0,
                           ),
-                          Text(
-                            '${_formatCurrency(item.unitPrice)} / ${item.unit}',
-                            style: TextStyle(fontSize: 10, color: AppTheme.primary.withOpacity(0.8), fontWeight: FontWeight.bold),
+                          child: Text(
+                            inCart ? 'Đã thêm ✓' : '+ Thêm nhanh',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
-                          const SizedBox(height: 6),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 28,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                cart.addItem(
-                                  ingredientId: item.ingredientId,
-                                  name: item.name,
-                                  unit: item.unit,
-                                  unitPrice: item.unitPrice,
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: inCart ? const Color(0xFF16A34A) : AppTheme.primary,
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                elevation: 0,
-                              ),
-                              child: Text(
-                                inCart ? 'Đã thêm ✓' : '+ Thêm nhanh',
-                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               );
@@ -377,114 +353,108 @@ class CartScreen extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context, CartOrderProvider cart) {
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppTheme.background.withOpacity(0.8),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 15,
-                offset: const Offset(0, -4),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SummaryRow(
+                label: 'Tạm tính',
+                value: _formatCurrency(cart.subtotal),
+                isHighlighted: false,
+              ),
+              const SizedBox(height: 8),
+              _SummaryRow(
+                label: 'Thuế VAT (10%)',
+                value: _formatCurrency(cart.taxAmount),
+                isHighlighted: false,
+              ),
+              const SizedBox(height: 8),
+              _SummaryRow(
+                label: cart.shippingAmount == 0
+                    ? 'Phí vận chuyển'
+                    : 'Phí vận chuyển',
+                value: cart.shippingAmount == 0
+                    ? 'Miễn phí'
+                    : _formatCurrency(cart.shippingAmount),
+                isHighlighted: false,
+                valueColor: cart.shippingAmount == 0 ? const Color(0xFF16A34A) : null,
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Divider(color: Color(0xFFE2E8F0), height: 1),
+              ),
+              _SummaryRow(
+                label: 'Tổng cộng',
+                value: _formatCurrency(cart.grandTotal),
+                isHighlighted: true,
+              ),
+              const SizedBox(height: 16),
+
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primary, AppTheme.secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primary.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CheckoutScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Xác nhận đặt hàng',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                    ],
+                  ),
+                ),
               ),
             ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _SummaryRow(
-                    label: 'Tạm tính',
-                    value: _formatCurrency(cart.subtotal),
-                    isHighlighted: false,
-                  ),
-                  const SizedBox(height: 8),
-                  _SummaryRow(
-                    label: 'Thuế VAT (10%)',
-                    value: _formatCurrency(cart.taxAmount),
-                    isHighlighted: false,
-                  ),
-                  const SizedBox(height: 8),
-                  _SummaryRow(
-                    label: cart.shippingAmount == 0
-                        ? 'Phí vận chuyển'
-                        : 'Phí vận chuyển',
-                    value: cart.shippingAmount == 0
-                        ? 'Miễn phí'
-                        : _formatCurrency(cart.shippingAmount),
-                    isHighlighted: false,
-                    valueColor: cart.shippingAmount == 0 ? const Color(0xFF16A34A) : null,
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(color: Colors.white24, height: 1),
-                  ),
-                  _SummaryRow(
-                    label: 'Tổng cộng',
-                    value: _formatCurrency(cart.grandTotal),
-                    isHighlighted: true,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // CTA Button
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: const LinearGradient(
-                        colors: [AppTheme.primary, AppTheme.secondary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CheckoutScreen(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        minimumSize: const Size(double.infinity, 52),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Xác nhận đặt hàng',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
@@ -537,148 +507,145 @@ class _CartItemTile extends StatelessWidget {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.4),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              (() {
-                final imagePath = getIngredientImage(null, item.name);
-                return Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            (() {
+              final imagePath = getIngredientImage(null, item.name);
+              return Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: imagePath != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(imagePath, fit: BoxFit.cover),
+                      )
+                    : const Icon(
+                        Icons.inventory_2_rounded,
+                        color: AppTheme.primary,
+                        size: 28,
+                      ),
+              );
+            })(),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.onSurface,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  child: imagePath != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.asset(imagePath, fit: BoxFit.cover),
-                        )
-                      : const Icon(
-                          Icons.inventory_2_rounded,
-                          color: AppTheme.primary,
-                          size: 28,
-                        ),
-                );
-              })(),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
+                  const SizedBox(height: 2),
+                  Text(
+                    '${_formatCurrency(item.unitPrice)} / ${item.unit}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.onSurfaceVariant.withOpacity(0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Thành tiền: ${_formatCurrency(item.subtotal)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    onTap: () => cart.decreaseItem(item.ingredientId),
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(9)),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        item.quantity <= 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
+                        size: 18,
+                        color: item.quantity <= 1 ? AppTheme.error : AppTheme.primary,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 36,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      border: Border.symmetric(
+                        vertical: BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                    child: Text(
+                      '${item.quantity}',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.onSurface,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_formatCurrency(item.unitPrice)} / ${item.unit}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.onSurfaceVariant.withOpacity(0.8),
-                        fontWeight: FontWeight.w500,
-                      ),
+                  ),
+                  InkWell(
+                    onTap: () => cart.addItem(
+                      ingredientId: item.ingredientId,
+                      name: item.name,
+                      unit: item.unit,
+                      unitPrice: item.unitPrice,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Thành tiền: ${_formatCurrency(item.subtotal)}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.secondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withOpacity(0.8), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    InkWell(
-                      onTap: () => cart.decreaseItem(item.ingredientId),
-                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(9)),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        alignment: Alignment.center,
-                        child: Icon(
-                          item.quantity <= 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
-                          size: 18,
-                          color: item.quantity <= 1 ? AppTheme.error : AppTheme.primary,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 36,
+                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(9)),
+                    child: Container(
+                      width: 32,
                       height: 32,
                       alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        border: Border.symmetric(
-                          vertical: BorderSide(color: Colors.white54),
-                        ),
-                      ),
-                      child: Text(
-                        '${item.quantity}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.onSurface,
-                        ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        size: 18,
+                        color: AppTheme.primary,
                       ),
                     ),
-                    InkWell(
-                      onTap: () => cart.addItem(
-                        ingredientId: item.ingredientId,
-                        name: item.name,
-                        unit: item.unit,
-                        unitPrice: item.unitPrice,
-                      ),
-                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(9)),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.add_rounded,
-                          size: 18,
-                          color: AppTheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

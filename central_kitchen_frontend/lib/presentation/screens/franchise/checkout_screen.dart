@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../business/providers/auth_provider.dart';
@@ -81,11 +80,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
           Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-              child: Container(
-                color: AppTheme.background.withOpacity(0.7),
-              ),
+            child: Container(
+              color: AppTheme.background.withOpacity(0.92),
             ),
           ),
           SafeArea(
@@ -279,30 +275,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(height: 14),
 
                   // 7. Terms Agreement & Warnings
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3CD).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.4), width: 1),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7E6),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFACC15).withOpacity(0.5), width: 1),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Đơn hàng sẽ được kiểm tra hạn mức công nợ tự động. Hệ thống sẽ từ chối nếu vượt hạn mức.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                          ),
                         ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 20),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Đơn hàng sẽ được kiểm tra hạn mức công nợ tự động. Hệ thống sẽ từ chối nếu vượt hạn mức.',
-                                style: TextStyle(fontSize: 11, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -447,28 +437,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildGlassCard({required Widget child}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.4),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: child,
-        ),
+        ],
       ),
+      child: child,
     );
   }
 

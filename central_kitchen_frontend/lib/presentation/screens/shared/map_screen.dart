@@ -24,6 +24,7 @@ class _MapScreenState extends State<MapScreen> {
   bool _isTracking = false;
   bool _isInit = true;
   String? _lastRouteRequestKey;
+  String? _lastLocationSignature;
 
   static const LatLng _defaultOrigin = LatLng(10.762622, 106.660172);
   static const LatLng _destinationPoint = LatLng(10.782622, 106.684172);
@@ -98,6 +99,7 @@ class _MapScreenState extends State<MapScreen> {
   void _startMonitoring() {
     if (_selectedOrderId == null) return;
     final deliveryChat = context.read<DeliveryChatProvider>();
+    deliveryChat.stopLocationPolling();
     deliveryChat.loadLatestLocationAsync(_selectedOrderId!).then((_) {
       if (!mounted) return;
       final latestLoc = deliveryChat.latestLocation;
@@ -333,7 +335,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
+    final auth = context.read<AuthProvider>();
     final cart = context.watch<CartOrderProvider>();
     final deliveryChat = context.watch<DeliveryChatProvider>();
     final latestLoc = deliveryChat.latestLocation;
@@ -341,10 +343,15 @@ class _MapScreenState extends State<MapScreen> {
     final simulationSteps = _simulationSteps(deliveryChat);
 
     if (latestLoc != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _refreshRoute(LatLng(latestLoc.latitude, latestLoc.longitude));
-      });
+      final signature =
+          '${latestLoc.logId}:${latestLoc.latitude}:${latestLoc.longitude}:${latestLoc.recordedAt?.millisecondsSinceEpoch ?? 0}';
+      if (_lastLocationSignature != signature) {
+        _lastLocationSignature = signature;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _refreshRoute(LatLng(latestLoc.latitude, latestLoc.longitude));
+        });
+      }
     }
 
     // Tìm đơn hàng đang được chọn để lấy trạng thái & địa chỉ người nhận

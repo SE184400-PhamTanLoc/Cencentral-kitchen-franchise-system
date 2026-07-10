@@ -135,11 +135,13 @@ class CartOrderProvider with ChangeNotifier {
   PlaceOrderResponse? get lastPlacedOrder => _lastPlacedOrder;
 
   void _setLoading(bool val) {
+    if (_isLoading == val) return;
     _isLoading = val;
     notifyListeners();
   }
 
   void _setError(String? msg) {
+    if (_errorMessage == msg) return;
     _errorMessage = msg;
     notifyListeners();
   }
@@ -199,7 +201,6 @@ class CartOrderProvider with ChangeNotifier {
 
   /// Tải danh sách đơn hàng của cửa hàng.
   Future<void> loadOrdersAsync(int storeId) async {
-    print('=== Gọi loadOrdersAsync với storeId = $storeId');
     _setLoading(true);
     _setError(null);
     try {

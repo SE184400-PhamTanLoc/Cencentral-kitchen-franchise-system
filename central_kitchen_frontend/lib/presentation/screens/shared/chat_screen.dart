@@ -15,11 +15,12 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   int? _selectedStoreId;
   int? _selectedKitchenId;
   bool _isInit = true;
   late DeliveryChatProvider _chatProvider;
+  int _lastMessageCount = 0;
 
   @override
   void didChangeDependencies() {
@@ -32,6 +33,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (auth.userRole == 'KITCHEN_STAFF') {
         _selectedKitchenId = auth.kitchenId ?? 1;
         _chatProvider.fetchStoresAndKitchens().then((_) {
+          if (!mounted || _chatProvider.storesList.isEmpty) return;
           if (_chatProvider.storesList.isNotEmpty) {
             setState(() {
               _selectedStoreId = _chatProvider.storesList.first['storeId'] as int?;
@@ -42,6 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
       } else if (auth.userRole == 'SUPPLY_COORDINATOR') {
         _selectedKitchenId = null; // Driver chats with Store, so kitchenId is null
         _chatProvider.fetchStoresAndKitchens().then((_) {
+          if (!mounted || _chatProvider.storesList.isEmpty) return;
           if (_chatProvider.storesList.isNotEmpty) {
             setState(() {
               _selectedStoreId = _chatProvider.storesList.first['storeId'] as int?;
@@ -59,11 +62,11 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _startConversation() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _chatProvider.loadConversationAsync(_selectedStoreId, _selectedKitchenId).then((_) => _scrollToBottom());
-      _chatProvider.startChatPolling(_selectedStoreId, _selectedKitchenId);
-    });
+  Future<void> _startConversation() async {
+    await _chatProvider.loadConversationAsync(_selectedStoreId, _selectedKitchenId);
+    if (!mounted) return;
+    _chatProvider.startChatPolling(_selectedStoreId, _selectedKitchenId);
+    _scheduleScrollToBottom();
   }
 
   @override
@@ -84,6 +87,14 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _scheduleScrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _scrollToBottom();
+      }
+    });
+  }
+
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
@@ -101,16 +112,17 @@ class _ChatScreenState extends State<ChatScreen> {
       kitchenId: _selectedKitchenId,
       messageText: text,
     );
-    _scrollToBottom();
+    _scheduleScrollToBottom();
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
+    final auth = context.read<AuthProvider>();
     final chatProvider = context.watch<DeliveryChatProvider>();
-    
-    // Auto scroll to bottom when new messages arrive
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    if (_lastMessageCount != chatProvider.messages.length) {
+      _lastMessageCount = chatProvider.messages.length;
+      _scheduleScrollToBottom();
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.background,

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../business/providers/notification_provider.dart';
@@ -81,13 +80,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
             ),
           ),
-          // Blur layer
           Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-              child: Container(
-                color: AppTheme.background.withOpacity(0.7),
-              ),
+            child: Container(
+              color: AppTheme.background.withOpacity(0.92),
             ),
           ),
           // Main Body
@@ -120,88 +115,92 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                             return ClipRRect(
                               borderRadius: BorderRadius.circular(16),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                                child: InkWell(
-                                  onTap: () {
-                                    if (!n.isRead) {
-                                      notifProvider.markAsReadAsync(n.notificationId);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: n.isRead ? Colors.white.withOpacity(0.4) : AppTheme.primary.withOpacity(0.08),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: n.isRead ? Colors.white.withOpacity(0.6) : AppTheme.primary.withOpacity(0.3),
-                                        width: n.isRead ? 1.2 : 1.8,
+                              child: InkWell(
+                                onTap: () {
+                                  if (!n.isRead) {
+                                    notifProvider.markAsReadAsync(n.notificationId);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: n.isRead ? Colors.white : const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: n.isRead ? const Color(0xFFE2E8F0) : AppTheme.primary.withOpacity(0.25),
+                                      width: n.isRead ? 1.0 : 1.4,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.03),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
                                       ),
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(
-                                            color: (isError
-                                                ? AppTheme.error
-                                                : isSuccess
-                                                    ? const Color(0xFF16A34A)
-                                                    : AppTheme.primary)
-                                                .withOpacity(0.12),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            isError
-                                                ? Icons.cancel_outlined
-                                                : isSuccess
-                                                    ? Icons.check_circle_outline_rounded
-                                                    : Icons.notifications_active_outlined,
-                                            color: isError
-                                                ? AppTheme.error
-                                                : isSuccess
-                                                    ? const Color(0xFF16A34A)
-                                                    : AppTheme.primary,
-                                            size: 20,
-                                          ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: (isError
+                                                  ? AppTheme.error
+                                                  : isSuccess
+                                                      ? const Color(0xFF16A34A)
+                                                      : AppTheme.primary)
+                                              .withOpacity(0.12),
+                                          shape: BoxShape.circle,
                                         ),
-                                        const SizedBox(width: 14),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                n.title,
-                                                style: TextStyle(
-                                                  fontWeight: n.isRead ? FontWeight.w600 : FontWeight.bold,
-                                                  fontSize: 14,
-                                                  color: AppTheme.onSurface,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                n.message,
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  color: AppTheme.onSurfaceVariant.withOpacity(0.8),
-                                                  height: 1.3,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                n.timeAgo,
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: AppTheme.onSurfaceVariant.withOpacity(0.6),
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                        child: Icon(
+                                          isError
+                                              ? Icons.cancel_outlined
+                                              : isSuccess
+                                                  ? Icons.check_circle_outline_rounded
+                                                  : Icons.notifications_active_outlined,
+                                          color: isError
+                                              ? AppTheme.error
+                                              : isSuccess
+                                                  ? const Color(0xFF16A34A)
+                                                  : AppTheme.primary,
+                                          size: 20,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              n.title,
+                                              style: TextStyle(
+                                                fontWeight: n.isRead ? FontWeight.w600 : FontWeight.bold,
+                                                fontSize: 14,
+                                                color: AppTheme.onSurface,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              n.message,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: AppTheme.onSurfaceVariant.withOpacity(0.8),
+                                                height: 1.3,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              n.timeAgo,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.onSurfaceVariant.withOpacity(0.6),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
