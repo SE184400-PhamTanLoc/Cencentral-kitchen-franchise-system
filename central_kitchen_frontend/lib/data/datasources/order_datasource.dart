@@ -68,8 +68,8 @@ class OrderDatasource {
     final response = await _apiClient.put(
       FranchiseEndpoints.receiveOrder(orderId),
       data: {
-        if (receivedItems != null) 'receivedItems': receivedItems,
-        if (notes != null) 'notes': notes,
+        'receivedItems': ?receivedItems,
+        'notes': ?notes,
       },
     );
     return Map<String, dynamic>.from(response.data as Map);
@@ -115,9 +115,8 @@ class OrderDatasource {
       data: {
         'storeId': storeId,
         'consumeType': consumeType,
-        if (reason != null) 'reason': reason,
-        if (consumeDate != null)
-          'consumeDate': consumeDate.toIso8601String(),
+        'reason': ?reason,
+        'consumeDate': ?consumeDate?.toIso8601String(),
         'items': items.map((e) => e.toJson()).toList(),
       },
     );
