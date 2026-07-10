@@ -60,6 +60,15 @@ jobs:
       - name: Analyze code
         run: flutter analyze
 
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: central-kitchen-app
+          path: central_kitchen_frontend/build/app/outputs/flutter-apk/app-release.apk
+
       # Uncomment if you have test files
       # - name: Run tests
       #   run: flutter test
