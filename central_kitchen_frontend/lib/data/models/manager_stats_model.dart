@@ -37,6 +37,7 @@ class ManagerPendingOrderModel {
   final double totalAmount;
   final DateTime createdAt;
   final DateTime orderDate;
+  final DateTime? updatedAt;
   final String notes;
 
   ManagerPendingOrderModel({
@@ -49,6 +50,7 @@ class ManagerPendingOrderModel {
     required this.totalAmount,
     required this.createdAt,
     required this.orderDate,
+    required this.updatedAt,
     required this.notes,
   });
 
@@ -63,6 +65,9 @@ class ManagerPendingOrderModel {
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       orderDate: DateTime.tryParse(json['orderDate'] ?? '') ?? DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'])
+          : null,
       notes: json['notes'] ?? '',
     );
   }

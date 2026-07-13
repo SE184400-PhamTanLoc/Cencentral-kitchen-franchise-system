@@ -24,7 +24,8 @@ class SharedOrderDetailsModal extends StatefulWidget {
     this.onRefresh,
   });
 
-  static void show(BuildContext context, {
+  static void show(
+    BuildContext context, {
     required int orderId,
     required String orderCode,
     required String orderStatus,
@@ -44,7 +45,8 @@ class SharedOrderDetailsModal extends StatefulWidget {
   }
 
   @override
-  State<SharedOrderDetailsModal> createState() => _SharedOrderDetailsModalState();
+  State<SharedOrderDetailsModal> createState() =>
+      _SharedOrderDetailsModalState();
 }
 
 class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
@@ -88,7 +90,9 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CartOrderProvider>().loadOrderDetailAsync(widget.orderId);
-      context.read<DeliveryChatProvider>().loadLatestLocationAsync(widget.orderId);
+      context.read<DeliveryChatProvider>().loadLatestLocationAsync(
+        widget.orderId,
+      );
     });
   }
 
@@ -122,7 +126,8 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     if (details != null && _controllers.isEmpty) {
       for (final item in details.items) {
         _controllers[item.ingredientId] = TextEditingController(
-          text: (item.quantityDelivered ?? item.quantityOrdered).toStringAsFixed(1),
+          text: (item.quantityDelivered ?? item.quantityOrdered)
+              .toStringAsFixed(1),
         );
       }
     }
@@ -167,7 +172,7 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
                   onPressed: () => Navigator.pop(context),
-                )
+                ),
               ],
             ),
           ),
@@ -179,42 +184,45 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                     child: CircularProgressIndicator(color: AppTheme.primary),
                   )
                 : details == null
-                    ? const Center(
-                        child: Text(
-                          'Không thể tải chi tiết đơn hàng.',
-                          style: TextStyle(color: AppTheme.onSurfaceVariant),
+                ? const Center(
+                    child: Text(
+                      'Không thể tải chi tiết đơn hàng.',
+                      style: TextStyle(color: AppTheme.onSurfaceVariant),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 5-step progress timeline
+                        _buildTimeline(details.orderStatus),
+                        const SizedBox(height: 16),
+
+                        // General details card
+                        _buildGeneralInfoCard(details),
+                        const SizedBox(height: 16),
+
+                        // Items Header
+                        const Text(
+                          'Danh sách nguyên liệu',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.onSurface,
+                          ),
                         ),
-                      )
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 5-step progress timeline
-                            _buildTimeline(details.orderStatus),
-                            const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
-                            // General details card
-                            _buildGeneralInfoCard(details),
-                            const SizedBox(height: 16),
-
-                            // Items Header
-                            const Text(
-                              'Danh sách nguyên liệu',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Items List
-                            _buildItemsList(details, role),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
-                      ),
+                        // Items List
+                        _buildItemsList(details, role),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
           ),
 
           // Bottom Action Panel
@@ -233,7 +241,9 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
       activeStep = 0;
     } else if (statusUpper == 'APPROVED') {
       activeStep = 1;
-    } else if (statusUpper == 'DELIVERING' || statusUpper == 'SHIPPING' || statusUpper == 'DISPATCHED') {
+    } else if (statusUpper == 'DELIVERING' ||
+        statusUpper == 'SHIPPING' ||
+        statusUpper == 'DISPATCHED') {
       activeStep = 2;
     } else if (statusUpper == 'SHIPPED') {
       activeStep = 3;
@@ -260,11 +270,21 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.cancel_rounded, color: Color(0xFFDC2626), size: 20),
+                const Icon(
+                  Icons.cancel_rounded,
+                  color: Color(0xFFDC2626),
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  statusUpper == 'REJECTED' ? 'Đơn hàng bị từ chối' : 'Đơn hàng đã hủy',
-                  style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold, fontSize: 13),
+                  statusUpper == 'REJECTED'
+                      ? 'Đơn hàng bị từ chối'
+                      : 'Đơn hàng đã hủy',
+                  style: const TextStyle(
+                    color: Color(0xFFDC2626),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -288,7 +308,11 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                             height: 2,
                             color: index == 0
                                 ? Colors.transparent
-                                : (index <= activeStep ? AppTheme.primary : AppTheme.outlineVariant.withOpacity(0.5)),
+                                : (index <= activeStep
+                                      ? AppTheme.primary
+                                      : AppTheme.outlineVariant.withOpacity(
+                                          0.5,
+                                        )),
                           ),
                         ),
                         // Dot
@@ -299,14 +323,22 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                             shape: BoxShape.circle,
                             color: isCurrent
                                 ? AppTheme.primary
-                                : (isCompleted ? AppTheme.primary.withOpacity(0.2) : Colors.white),
+                                : (isCompleted
+                                      ? AppTheme.primary.withOpacity(0.2)
+                                      : Colors.white),
                             border: Border.all(
-                              color: isCompleted ? AppTheme.primary : AppTheme.outlineVariant,
+                              color: isCompleted
+                                  ? AppTheme.primary
+                                  : AppTheme.outlineVariant,
                               width: isCurrent ? 6 : 2,
                             ),
                           ),
                           child: isCompleted && !isCurrent
-                              ? const Icon(Icons.check, size: 12, color: AppTheme.primary)
+                              ? const Icon(
+                                  Icons.check,
+                                  size: 12,
+                                  color: AppTheme.primary,
+                                )
                               : null,
                         ),
                         // Line trailing
@@ -315,7 +347,11 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                             height: 2,
                             color: index == steps.length - 1
                                 ? Colors.transparent
-                                : (index < activeStep ? AppTheme.primary : AppTheme.outlineVariant.withOpacity(0.5)),
+                                : (index < activeStep
+                                      ? AppTheme.primary
+                                      : AppTheme.outlineVariant.withOpacity(
+                                          0.5,
+                                        )),
                           ),
                         ),
                       ],
@@ -325,10 +361,14 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                       steps[index],
                       style: TextStyle(
                         fontSize: 10.5,
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.w500,
                         color: isCurrent
                             ? AppTheme.primary
-                            : (isCompleted ? AppTheme.onSurface : AppTheme.onSurfaceVariant.withOpacity(0.6)),
+                            : (isCompleted
+                                  ? AppTheme.onSurface
+                                  : AppTheme.onSurfaceVariant.withOpacity(0.6)),
                       ),
                     ),
                   ],
@@ -355,11 +395,23 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
       ),
       child: Column(
         children: [
-          _buildInfoRow(Icons.calendar_today_rounded, 'Thời gian khởi tạo', dateStr),
+          _buildInfoRow(
+            Icons.calendar_today_rounded,
+            'Thời gian khởi tạo',
+            dateStr,
+          ),
           const SizedBox(height: 12),
-          _buildInfoRow(Icons.kitchen_rounded, 'Bếp cấp hàng', details.kitchenName),
+          _buildInfoRow(
+            Icons.kitchen_rounded,
+            'Bếp cấp hàng',
+            details.kitchenName,
+          ),
           const SizedBox(height: 12),
-          _buildInfoRow(Icons.storefront_rounded, 'Cửa hàng nhận', details.storeName),
+          _buildInfoRow(
+            Icons.storefront_rounded,
+            'Cửa hàng nhận',
+            details.storeName,
+          ),
           if (details.notes != null && details.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
             _buildInfoRow(Icons.notes_rounded, 'Ghi chú đặt', details.notes!),
@@ -399,12 +451,14 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
 
   Widget _buildItemsList(OrderDetailModel details, String role) {
     final statusUpper = details.orderStatus.toUpperCase();
-    final isFranchiseConfirmState = role != 'MANAGER' &&
+    final isFranchiseConfirmState =
+        role != 'MANAGER' &&
         role != 'ADMIN' &&
         role != 'KITCHEN_STAFF' &&
         role != 'SUPPLY_COORDINATOR' &&
-        (statusUpper == 'SHIPPED' || statusUpper == 'DELIVERING' || statusUpper == 'APPROVED');
-
+        (statusUpper == 'SHIPPED' ||
+            statusUpper == 'DELIVERING' ||
+            statusUpper == 'APPROVED');
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -440,7 +494,11 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                     item.ingredientName,
                     size: 58,
                     borderRadius: 12,
-                    fallback: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF64748B), size: 24),
+                    fallback: const Icon(
+                      Icons.shopping_bag_outlined,
+                      color: Color(0xFF64748B),
+                      size: 24,
+                    ),
                   ),
                 ),
               ),
@@ -461,31 +519,31 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                     const SizedBox(height: 4),
                     Text(
                       'Đơn giá: ${_fmt(item.unitPrice)} / ${item.unit}',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Số lượng đặt: ${item.quantityOrdered} ${item.unit}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                    ),
-                    if (item.quantityDelivered != null && !isFranchiseConfirmState) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Thực nhận: ${item.quantityDelivered} ${item.unit}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
                       ),
-                    ],
+                    ),
                     if (isFranchiseConfirmState) ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           const Text(
                             'Thực nhận: ',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
                           ),
                           const SizedBox(width: 4),
                           SizedBox(
@@ -493,30 +551,51 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                             height: 32,
                             child: TextField(
                               controller: _controllers[item.ingredientId],
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                               decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 0,
+                                ),
                                 filled: true,
                                 fillColor: Colors.white,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: Color(0xFF00236F), width: 1.5),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF00236F),
+                                    width: 1.5,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Text(item.unit, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                          Text(
+                            item.unit,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -540,28 +619,44 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     );
   }
 
-  Widget _buildActionPanel(BuildContext context, OrderDetailModel details, String role) {
+  Widget _buildActionPanel(
+    BuildContext context,
+    OrderDetailModel details,
+    String role,
+  ) {
     final statusUpper = details.orderStatus.toUpperCase();
     final List<Widget> buttons = [];
 
     // --- FRANCHISE ACTIONS ---
-    if (role != 'MANAGER' && role != 'ADMIN' && role != 'KITCHEN_STAFF' && role != 'SUPPLY_COORDINATOR') {
+    if (role != 'MANAGER' &&
+        role != 'ADMIN' &&
+        role != 'KITCHEN_STAFF' &&
+        role != 'SUPPLY_COORDINATOR') {
       if (statusUpper == 'PENDING') {
         buttons.add(
           Expanded(
             child: ElevatedButton(
-              onPressed: _isActionLoading ? null : () => _showCancelDialog(context, details),
+              onPressed: _isActionLoading
+                  ? null
+                  : () => _showCancelDialog(context, details),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.error,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text('HỦY ĐƠN HÀNG', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'HỦY ĐƠN HÀNG',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         );
-      } else if (statusUpper == 'SHIPPED' || statusUpper == 'DELIVERING' || statusUpper == 'APPROVED') {
+      } else if (statusUpper == 'SHIPPED' ||
+          statusUpper == 'DELIVERING' ||
+          statusUpper == 'APPROVED') {
         buttons.add(
           Expanded(
             child: Column(
@@ -573,26 +668,41 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                   decoration: InputDecoration(
                     labelText: 'Ghi chú khi nhận hàng (nếu có)',
                     labelStyle: const TextStyle(fontSize: 12.5),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: _isActionLoading ? null : () => _confirmReceipt(context, details),
+                  onPressed: _isActionLoading
+                      ? null
+                      : () => _confirmReceipt(context, details),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade700,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: _isActionLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
-                      : const Text('XÁC NHẬN NHẬN HÀNG', style: TextStyle(fontWeight: FontWeight.bold)),
+                      : const Text(
+                          'XÁC NHẬN NHẬN HÀNG',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                 ),
               ],
             ),
@@ -603,7 +713,10 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
 
     // --- DRIVER (SUPPLY COORDINATOR) ACTIONS ---
     if (role == 'SUPPLY_COORDINATOR') {
-      if (statusUpper == 'DELIVERING' || statusUpper == 'SHIPPING' || statusUpper == 'DISPATCHED' || statusUpper == 'APPROVED') {
+      if (statusUpper == 'DELIVERING' ||
+          statusUpper == 'SHIPPING' ||
+          statusUpper == 'DISPATCHED' ||
+          statusUpper == 'APPROVED') {
         buttons.add(
           Expanded(
             child: Column(
@@ -619,11 +732,16 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                     await _reloadModalState(details.orderId, details.storeId);
                   },
                   icon: const Icon(Icons.map_rounded),
-                  label: const Text('MỞ BẢN ĐỒ GPS', style: TextStyle(fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    'MỞ BẢN ĐỒ GPS',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     minimumSize: const Size(double.infinity, 48),
                   ),
                 ),
@@ -631,7 +749,8 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                 Consumer<DeliveryChatProvider>(
                   builder: (context, deliveryChat, child) {
                     final loc = deliveryChat.latestLocation;
-                    final hasArrived = loc != null &&
+                    final hasArrived =
+                        loc != null &&
                         (loc.latitude - 10.782622).abs() < 0.001 &&
                         (loc.longitude - 106.684172).abs() < 0.001;
 
@@ -641,13 +760,19 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                           : () => _confirmArrived(context, details, hasArrived),
                       icon: const Icon(Icons.done_all_rounded),
                       label: Text(
-                        hasArrived ? 'XÁC NHẬN ĐÃ ĐẾN CỬA HÀNG' : 'CHƯA TỚI CỬA HÀNG (YÊU CẦU GPS)',
+                        hasArrived
+                            ? 'XÁC NHẬN ĐÃ ĐẾN CỬA HÀNG'
+                            : 'CHƯA TỚI CỬA HÀNG (YÊU CẦU GPS)',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: hasArrived ? Colors.orange.shade800 : Colors.grey.shade400,
+                        backgroundColor: hasArrived
+                            ? Colors.orange.shade800
+                            : Colors.grey.shade400,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         minimumSize: const Size(double.infinity, 48),
                       ),
                     );
@@ -666,13 +791,20 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
         buttons.add(
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: _isActionLoading ? null : () => _dispatchOrder(context, details.orderId),
+              onPressed: _isActionLoading
+                  ? null
+                  : () => _dispatchOrder(context, details.orderId),
               icon: const Icon(Icons.local_shipping_rounded),
-              label: const Text('XUẤT KHO GIAO HÀNG', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'XUẤT KHO GIAO HÀNG',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
@@ -687,27 +819,46 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
         buttons.addAll([
           Expanded(
             child: OutlinedButton(
-              onPressed: _isActionLoading ? null : () => _approveOrRejectManager(context, details.orderId, false),
+              onPressed: _isActionLoading
+                  ? null
+                  : () => _approveOrRejectManager(
+                      context,
+                      details.orderId,
+                      false,
+                    ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppTheme.error),
                 foregroundColor: AppTheme.error,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text('TỪ CHỐI ĐƠN', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'TỪ CHỐI ĐƠN',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              onPressed: _isActionLoading ? null : () => _approveOrRejectManager(context, details.orderId, true),
+              onPressed: _isActionLoading
+                  ? null
+                  : () =>
+                        _approveOrRejectManager(context, details.orderId, true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text('DUYỆT ĐƠN HÀNG', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'DUYỆT ĐƠN HÀNG',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ]);
@@ -734,7 +885,9 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
             offset: const Offset(0, -4),
           ),
         ],
-        border: Border(top: BorderSide(color: AppTheme.outlineVariant.withOpacity(0.5))),
+        border: Border(
+          top: BorderSide(color: AppTheme.outlineVariant.withOpacity(0.5)),
+        ),
       ),
       child: Row(children: buttons),
     );
@@ -742,7 +895,10 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
 
   // --- ACTIONS LOGIC IMPLEMENTATIONS ---
 
-  Future<void> _showCancelDialog(BuildContext context, OrderDetailModel details) async {
+  Future<void> _showCancelDialog(
+    BuildContext context,
+    OrderDetailModel details,
+  ) async {
     final reasonController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final result = await showDialog<bool>(
@@ -781,12 +937,19 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                         children: [
                           Text(
                             'Hủy đơn hàng',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.red),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.red,
+                            ),
                           ),
                           SizedBox(height: 2),
                           Text(
                             'Yêu cầu hủy đơn đặt hàng hiện tại',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                            ),
                           ),
                         ],
                       ),
@@ -796,7 +959,10 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: reasonController,
-                  decoration: _buildInputDecoration('Lý do hủy đơn hàng', Icons.notes_rounded),
+                  decoration: _buildInputDecoration(
+                    'Lý do hủy đơn hàng',
+                    Icons.notes_rounded,
+                  ),
                   validator: (val) {
                     if (val == null || val.trim().length < 5) {
                       return 'Lý do phải từ 5 ký tự trở lên';
@@ -812,10 +978,18 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                         onPressed: () => Navigator.pop(ctx, false),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           side: BorderSide(color: Colors.grey.shade300),
                         ),
-                        child: const Text('Hủy bỏ', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Hủy bỏ',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -829,10 +1003,18 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red.shade700,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text('Xác nhận hủy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Xác nhận hủy',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -847,21 +1029,26 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     if (result == true) {
       setState(() => _isActionLoading = true);
       final success = await context.read<CartOrderProvider>().cancelOrderAsync(
-            orderId: details.orderId,
-            storeId: details.storeId,
-            reason: reasonController.text.trim(),
-          );
+        orderId: details.orderId,
+        storeId: details.storeId,
+        reason: reasonController.text.trim(),
+      );
       setState(() => _isActionLoading = false);
 
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã hủy đơn hàng thành công!'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Đã hủy đơn hàng thành công!'),
+              backgroundColor: Colors.green,
+            ),
           );
           if (widget.onRefresh != null) widget.onRefresh!();
           Navigator.pop(context);
         } else {
-          final errorMsg = context.read<CartOrderProvider>().errorMessage ?? 'Hủy đơn hàng thất bại.';
+          final errorMsg =
+              context.read<CartOrderProvider>().errorMessage ??
+              'Hủy đơn hàng thất bại.';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
           );
@@ -871,7 +1058,10 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     reasonController.dispose();
   }
 
-  Future<void> _confirmReceipt(BuildContext context, OrderDetailModel details) async {
+  Future<void> _confirmReceipt(
+    BuildContext context,
+    OrderDetailModel details,
+  ) async {
     setState(() => _isActionLoading = true);
 
     final receivedItems = details.items.map((item) {
@@ -884,23 +1074,28 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     }).toList();
 
     final success = await context.read<CartOrderProvider>().receiveOrderAsync(
-          orderId: details.orderId,
-          storeId: details.storeId,
-          receivedItems: receivedItems,
-          notes: _notesController.text.trim(),
-        );
+      orderId: details.orderId,
+      storeId: details.storeId,
+      receivedItems: receivedItems,
+      notes: _notesController.text.trim(),
+    );
 
     setState(() => _isActionLoading = false);
 
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nhận hàng và cập nhật tồn kho thành công!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Nhận hàng và cập nhật tồn kho thành công!'),
+            backgroundColor: Colors.green,
+          ),
         );
         if (widget.onRefresh != null) widget.onRefresh!();
         Navigator.pop(context);
       } else {
-        final errorMsg = context.read<CartOrderProvider>().errorMessage ?? 'Xác nhận thất bại.';
+        final errorMsg =
+            context.read<CartOrderProvider>().errorMessage ??
+            'Xác nhận thất bại.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMsg), backgroundColor: AppTheme.error),
         );
@@ -908,11 +1103,17 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     }
   }
 
-  Future<void> _confirmArrived(BuildContext context, OrderDetailModel details, bool hasArrived) async {
+  Future<void> _confirmArrived(
+    BuildContext context,
+    OrderDetailModel details,
+    bool hasArrived,
+  ) async {
     if (!hasArrived) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vui lòng mở Bản đồ GPS và di chuyển xe đến cột mốc Cửa hàng (CH) trước khi xác nhận!'),
+          content: Text(
+            'Vui lòng mở Bản đồ GPS và di chuyển xe đến cột mốc Cửa hàng (CH) trước khi xác nhận!',
+          ),
           backgroundColor: Colors.amber,
         ),
       );
@@ -921,9 +1122,9 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
 
     setState(() => _isActionLoading = true);
     final success = await context.read<CartOrderProvider>().arriveOrderAsync(
-          orderId: details.orderId,
-          storeId: details.storeId,
-        );
+      orderId: details.orderId,
+      storeId: details.storeId,
+    );
     if (success) {
       await _reloadModalState(details.orderId, details.storeId);
     }
@@ -932,12 +1133,17 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Xác nhận đã đến cửa hàng thành công!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Xác nhận đã đến cửa hàng thành công!'),
+            backgroundColor: Colors.green,
+          ),
         );
         if (widget.onRefresh != null) widget.onRefresh!();
         Navigator.pop(context);
       } else {
-        final errorMsg = context.read<CartOrderProvider>().errorMessage ?? 'Xác nhận thất bại.';
+        final errorMsg =
+            context.read<CartOrderProvider>().errorMessage ??
+            'Xác nhận thất bại.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMsg), backgroundColor: AppTheme.error),
         );
@@ -956,18 +1162,25 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
 
   Future<void> _dispatchOrder(BuildContext context, int orderId) async {
     setState(() => _isActionLoading = true);
-    final success = await context.read<InventoryProvider>().dispatchOrder(orderId);
+    final success = await context.read<InventoryProvider>().dispatchOrder(
+      orderId,
+    );
     setState(() => _isActionLoading = false);
 
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Xuất kho giao hàng thành công!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Xuất kho giao hàng thành công!'),
+            backgroundColor: Colors.green,
+          ),
         );
         if (widget.onRefresh != null) widget.onRefresh!();
         Navigator.pop(context);
       } else {
-        final errorMsg = context.read<InventoryProvider>().errorMessage ?? 'Xuất kho thất bại.';
+        final errorMsg =
+            context.read<InventoryProvider>().errorMessage ??
+            'Xuất kho thất bại.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMsg), backgroundColor: AppTheme.error),
         );
@@ -975,7 +1188,11 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
     }
   }
 
-  Future<void> _approveOrRejectManager(BuildContext context, int orderId, bool isApprove) async {
+  Future<void> _approveOrRejectManager(
+    BuildContext context,
+    int orderId,
+    bool isApprove,
+  ) async {
     final noteController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final result = await showDialog<bool>(
@@ -998,11 +1215,14 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: (isApprove ? Colors.green : Colors.red).withOpacity(0.08),
+                        color: (isApprove ? Colors.green : Colors.red)
+                            .withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        isApprove ? Icons.check_circle_outline : Icons.cancel_outlined,
+                        isApprove
+                            ? Icons.check_circle_outline
+                            : Icons.cancel_outlined,
                         color: isApprove ? Colors.green : Colors.red,
                         size: 28,
                       ),
@@ -1017,13 +1237,20 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
-                              color: isApprove ? Colors.green.shade800 : Colors.red.shade800,
+                              color: isApprove
+                                  ? Colors.green.shade800
+                                  : Colors.red.shade800,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            isApprove ? 'Xác nhận đồng ý cấp hàng cho đơn này' : 'Từ chối và hủy đơn đặt hàng',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            isApprove
+                                ? 'Xác nhận đồng ý cấp hàng cho đơn này'
+                                : 'Từ chối và hủy đơn đặt hàng',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                            ),
                           ),
                         ],
                       ),
@@ -1034,7 +1261,9 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                 TextFormField(
                   controller: noteController,
                   decoration: _buildInputDecoration(
-                    isApprove ? 'Ghi chú duyệt đơn (tùy chọn)' : 'Lý do từ chối (bắt buộc)',
+                    isApprove
+                        ? 'Ghi chú duyệt đơn (tùy chọn)'
+                        : 'Lý do từ chối (bắt buộc)',
                     Icons.notes_rounded,
                   ),
                   validator: (val) {
@@ -1052,10 +1281,18 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                         onPressed: () => Navigator.pop(ctx, false),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           side: BorderSide(color: Colors.grey.shade300),
                         ),
-                        child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Hủy',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1067,14 +1304,21 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isApprove ? Colors.green.shade700 : Colors.red.shade700,
+                          backgroundColor: isApprove
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           elevation: 0,
                         ),
                         child: Text(
                           isApprove ? 'Duyệt' : 'Từ chối',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -1091,9 +1335,15 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
       setState(() => _isActionLoading = true);
       String? error;
       if (isApprove) {
-        error = await context.read<ManagerProvider>().approveOrder(orderId, noteController.text.trim());
+        error = await context.read<ManagerProvider>().approveOrder(
+          orderId,
+          noteController.text.trim(),
+        );
       } else {
-        error = await context.read<ManagerProvider>().rejectOrder(orderId, noteController.text.trim());
+        error = await context.read<ManagerProvider>().rejectOrder(
+          orderId,
+          noteController.text.trim(),
+        );
       }
       setState(() => _isActionLoading = false);
 
@@ -1101,7 +1351,11 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
         if (error == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isApprove ? 'Đã duyệt đơn hàng thành công!' : 'Đã từ chối đơn hàng!'),
+              content: Text(
+                isApprove
+                    ? 'Đã duyệt đơn hàng thành công!'
+                    : 'Đã từ chối đơn hàng!',
+              ),
               backgroundColor: Colors.green,
             ),
           );

@@ -40,6 +40,7 @@ import 'presentation/screens/manager/manager_category_screen.dart';
 import 'presentation/screens/manager/manager_inventory_screen.dart';
 import 'presentation/screens/manager/manager_analytics_screen.dart';
 import 'presentation/screens/manager/manager_debt_screen.dart';
+import 'presentation/screens/manager/manager_order_history_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,10 +57,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         // 1. Tạo instance ApiClient dùng chung cho toàn bộ app
-        Provider<ApiClient>(
-          create: (_) => ApiClient(),
-        ),
-        
+        Provider<ApiClient>(create: (_) => ApiClient()),
+
         // 2. Tạo các Datasources phụ thuộc vào ApiClient
         ProxyProvider<ApiClient, AuthDatasource>(
           update: (_, apiClient, _) => AuthDatasource(apiClient),
@@ -85,7 +84,7 @@ class MyApp extends StatelessWidget {
         ProxyProvider<ApiClient, ManagerCatalogDatasource>(
           update: (_, apiClient, _) => ManagerCatalogDatasource(apiClient),
         ),
-        
+
         // 3. Tạo các Providers quản lý State, phụ thuộc vào các Datasources tương ứng
         ChangeNotifierProxyProvider<AuthDatasource, AuthProvider>(
           create: (context) => AuthProvider(context.read<AuthDatasource>()),
@@ -98,34 +97,47 @@ class MyApp extends StatelessWidget {
               previous ?? AdminProvider(adminDatasource),
         ),
         ChangeNotifierProxyProvider<InventoryDatasource, InventoryProvider>(
-          create: (context) => InventoryProvider(context.read<InventoryDatasource>()),
+          create: (context) =>
+              InventoryProvider(context.read<InventoryDatasource>()),
           update: (_, inventoryDatasource, previous) =>
               previous ?? InventoryProvider(inventoryDatasource),
         ),
         ChangeNotifierProxyProvider<OrderDatasource, CartOrderProvider>(
-          create: (context) => CartOrderProvider(context.read<OrderDatasource>()),
+          create: (context) =>
+              CartOrderProvider(context.read<OrderDatasource>()),
           update: (_, orderDatasource, previous) =>
               previous ?? CartOrderProvider(orderDatasource),
         ),
-        ChangeNotifierProxyProvider<NotificationDatasource, NotificationProvider>(
+        ChangeNotifierProxyProvider<
+          NotificationDatasource,
+          NotificationProvider
+        >(
           create: (context) =>
               NotificationProvider(context.read<NotificationDatasource>()),
           update: (_, notifDatasource, previous) =>
               previous ?? NotificationProvider(notifDatasource),
         ),
-        ChangeNotifierProxyProvider<DeliveryChatDatasource, DeliveryChatProvider>(
+        ChangeNotifierProxyProvider<
+          DeliveryChatDatasource,
+          DeliveryChatProvider
+        >(
           create: (context) =>
               DeliveryChatProvider(context.read<DeliveryChatDatasource>()),
           update: (_, deliveryChatDatasource, previous) =>
               previous ?? DeliveryChatProvider(deliveryChatDatasource),
         ),
         ChangeNotifierProxyProvider<ManagerDatasource, ManagerProvider>(
-          create: (context) => ManagerProvider(context.read<ManagerDatasource>()),
+          create: (context) =>
+              ManagerProvider(context.read<ManagerDatasource>()),
           update: (_, managerDatasource, previous) =>
               previous ?? ManagerProvider(managerDatasource),
         ),
-        ChangeNotifierProxyProvider<ManagerCatalogDatasource, ManagerCatalogProvider>(
-          create: (context) => ManagerCatalogProvider(context.read<ManagerCatalogDatasource>()),
+        ChangeNotifierProxyProvider<
+          ManagerCatalogDatasource,
+          ManagerCatalogProvider
+        >(
+          create: (context) =>
+              ManagerCatalogProvider(context.read<ManagerCatalogDatasource>()),
           update: (_, managerCatalogDatasource, previous) =>
               previous ?? ManagerCatalogProvider(managerCatalogDatasource),
         ),
@@ -135,10 +147,10 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         debugShowCheckedModeBanner: false,
         navigatorKey: navigatorKey,
-        
+
         // Cấu hình màn hình khởi chạy đầu tiên
         home: const AuthWrapper(),
-        
+
         // Đăng ký các route phụ trợ (Admin, Kitchen, Franchise)
         routes: {
           '/login': (context) => const LoginScreen(),
@@ -153,6 +165,8 @@ class MyApp extends StatelessWidget {
           '/manager/inventory': (context) => const ManagerInventoryScreen(),
           '/manager/analytics': (context) => const ManagerAnalyticsScreen(),
           '/manager/debt': (context) => const ManagerDebtScreen(),
+          '/manager/order-history': (context) =>
+              const ManagerOrderHistoryScreen(),
         },
       ),
     );
@@ -192,7 +206,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.restaurant_menu, size: 64, color: AppTheme.primary),
+                  Icon(
+                    Icons.restaurant_menu,
+                    size: 64,
+                    color: AppTheme.primary,
+                  ),
                   SizedBox(height: 16),
                   CircularProgressIndicator(color: AppTheme.primary),
                 ],
@@ -200,11 +218,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
             ),
           );
         }
-        
+
         // 2. Đã đọc xong dữ liệu: Kiểm tra người dùng đã xác thực chưa
         if (authProvider.isAuthenticated) {
           final role = authProvider.userRole;
-          
+
           // Điều hướng người dùng tự động vào đúng phân hệ vai trò khi tự động đăng nhập thành công
           if (role == 'ADMIN') {
             return const AdminDashboardScreen();
@@ -239,7 +257,13 @@ class PlaceholderDashboard extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: AppTheme.primary,
         actions: [
           IconButton(
@@ -259,16 +283,27 @@ class PlaceholderDashboard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.dashboard_customize_outlined, size: 80, color: AppTheme.secondary),
+            const Icon(
+              Icons.dashboard_customize_outlined,
+              size: 80,
+              color: AppTheme.secondary,
+            ),
             const SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primary),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Tài khoản: ${authProvider.currentUser?.fullName ?? 'N/A'} (${authProvider.userRole ?? 'N/A'})',
-              style: const TextStyle(fontSize: 14, color: AppTheme.onSurfaceVariant),
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(

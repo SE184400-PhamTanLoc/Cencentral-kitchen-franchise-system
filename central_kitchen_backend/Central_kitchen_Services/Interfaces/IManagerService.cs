@@ -8,6 +8,7 @@ public interface IManagerService
 {
     Task<ManagerDashboardStatsDto> GetDashboardStatsAsync();
     Task<List<ManagerPendingOrderDto>> GetPendingOrdersAsync();
+    Task<List<ManagerPendingOrderDto>> GetOrderHistoryAsync(string? status = null);
     
     // Epic 2: Inventory
     Task<List<ChainInventoryDto>> GetChainInventoryAsync();

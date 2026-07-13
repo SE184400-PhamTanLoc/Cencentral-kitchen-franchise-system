@@ -22,6 +22,20 @@ class ManagerDatasource {
         .toList();
   }
 
+  Future<List<ManagerPendingOrderModel>> getOrderHistory({
+    String? status,
+  }) async {
+    final res = await _client.get(
+      '/api/manager/orders/history',
+      queryParameters: status == null || status.isEmpty
+          ? null
+          : {'status': status},
+    );
+    return (res.data as List)
+        .map((x) => ManagerPendingOrderModel.fromJson(x))
+        .toList();
+  }
+
   Future<void> approveOrder(int orderId, String notes) async {
     await _client.put(
       FranchiseEndpoints.approveOrder(orderId),
@@ -38,22 +52,30 @@ class ManagerDatasource {
 
   Future<List<ChainInventoryModel>> getChainInventory() async {
     final res = await _client.get('/api/manager/inventory');
-    return (res.data as List).map((x) => ChainInventoryModel.fromJson(x)).toList();
+    return (res.data as List)
+        .map((x) => ChainInventoryModel.fromJson(x))
+        .toList();
   }
 
   Future<AnalyticsModel> getAnalytics({int days = 7}) async {
-    final res = await _client.get('/api/manager/analytics', queryParameters: {'days': days});
+    final res = await _client.get(
+      '/api/manager/analytics',
+      queryParameters: {'days': days},
+    );
     return AnalyticsModel.fromJson(res.data);
   }
 
   Future<List<ManagerStoreModel>> getStores() async {
     final res = await _client.get('/api/manager/stores');
-    return (res.data as List).map((x) => ManagerStoreModel.fromJson(x)).toList();
+    return (res.data as List)
+        .map((x) => ManagerStoreModel.fromJson(x))
+        .toList();
   }
 
   Future<void> updateStoreCreditLimit(int storeId, double creditLimit) async {
-    await _client.put('/api/manager/stores/$storeId/credit-limit', data: {
-      'creditLimit': creditLimit
-    });
+    await _client.put(
+      '/api/manager/stores/$storeId/credit-limit',
+      data: {'creditLimit': creditLimit},
+    );
   }
 }

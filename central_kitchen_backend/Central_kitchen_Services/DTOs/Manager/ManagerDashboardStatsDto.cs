@@ -23,5 +23,6 @@ public class ManagerPendingOrderDto
     public decimal TotalAmount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime OrderDate { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public string Notes { get; set; } = string.Empty;
 }

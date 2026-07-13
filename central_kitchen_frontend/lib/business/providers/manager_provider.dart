@@ -23,6 +23,9 @@ class ManagerProvider extends ChangeNotifier {
   List<ManagerPendingOrderModel> _pendingOrders = [];
   List<ManagerPendingOrderModel> get pendingOrders => _pendingOrders;
 
+  List<ManagerPendingOrderModel> _orderHistory = [];
+  List<ManagerPendingOrderModel> get orderHistory => _orderHistory;
+
   final Set<int> _processingOrderIds = {};
   Set<int> get processingOrderIds => _processingOrderIds;
 
@@ -48,6 +51,9 @@ class ManagerProvider extends ChangeNotifier {
 
   bool _isLoadingStores = false;
   bool get isLoadingStores => _isLoadingStores;
+
+  bool _isLoadingHistory = false;
+  bool get isLoadingHistory => _isLoadingHistory;
 
   Future<void> loadDashboardData() async {
     _isLoadingStats = true;
@@ -158,6 +164,20 @@ class ManagerProvider extends ChangeNotifier {
       _errorMessage = e.toString();
     } finally {
       _isLoadingStores = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadOrderHistory({String? status}) async {
+    _isLoadingHistory = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      _orderHistory = await _datasource.getOrderHistory(status: status);
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoadingHistory = false;
       notifyListeners();
     }
   }

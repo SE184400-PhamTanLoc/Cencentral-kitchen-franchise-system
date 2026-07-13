@@ -61,7 +61,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     backgroundColor: AppTheme.primaryContainer,
                     child: Text(
                       _avatarInitial(auth.currentUser?.fullName),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   title: Text(auth.currentUser?.fullName ?? 'Quản lý'),
@@ -91,7 +94,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   Widget build(BuildContext context) {
     final auth = context.read<AuthProvider>();
     final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
-    
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -106,7 +109,11 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
           children: [
             Text(
               'Xin chào, ${auth.currentUser?.fullName ?? 'Quản lý'}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primary),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.primary,
+              ),
             ),
             const SizedBox(height: 3),
             const Text(
@@ -118,7 +125,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         actions: [
           IconButton(
             tooltip: 'Tải lại',
-            onPressed: () => context.read<ManagerProvider>().loadDashboardData(),
+            onPressed: () =>
+                context.read<ManagerProvider>().loadDashboardData(),
             icon: const Icon(Icons.refresh_outlined),
           ),
           const SizedBox(width: 4),
@@ -131,7 +139,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 backgroundColor: AppTheme.primaryContainer,
                 child: Text(
                   _avatarInitial(auth.currentUser?.fullName),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -149,32 +160,45 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 Expanded(
                   child: provider.isLoadingStats && provider.stats == null
                       ? const Center(
-                          child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF2563EB),
+                          ),
                         )
                       : provider.errorMessage != null
-                          ? Center(
-                              child: Text(
-                                'Lỗi hệ thống: ${provider.errorMessage}',
-                                style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                      ? Center(
+                          child: Text(
+                            'Lỗi hệ thống: ${provider.errorMessage}',
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      : _selectedTabIndex == 0
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildBentoStatsMatrix(
+                                provider.stats,
+                                formatCurrency,
+                                isDesktop: false,
                               ),
-                            )
-                          : _selectedTabIndex == 0
-                              ? SingleChildScrollView(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _buildBentoStatsMatrix(provider.stats, formatCurrency, isDesktop: false),
-                                      const SizedBox(height: 24),
-                                      _buildCoreModules(isDesktop: false),
-                                      const SizedBox(height: 24),
-                                    ],
-                                  ),
-                                )
-                              : Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: _buildOrderCommandCenter(provider, formatCurrency, isMobile: false),
-                                ),
+                              const SizedBox(height: 24),
+                              _buildCoreModules(isDesktop: false),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: _buildOrderCommandCenter(
+                            provider,
+                            formatCurrency,
+                            isMobile: false,
+                          ),
+                        ),
                 ),
               ],
             );
@@ -210,9 +234,13 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     );
   }
 
-  Widget _buildBentoStatsMatrix(ManagerStatsModel? stats, NumberFormat format, {required bool isDesktop}) {
+  Widget _buildBentoStatsMatrix(
+    ManagerStatsModel? stats,
+    NumberFormat format, {
+    required bool isDesktop,
+  }) {
     if (stats == null) return const SizedBox.shrink();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -236,36 +264,36 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             childAspectRatio: 1.1,
             children: [
               _buildModernStatCard(
-                'Tổng Chi Nhánh', 
-                stats.totalStores.toString(), 
-                Icons.storefront_rounded, 
-                const Color(0xFFEFF6FF), 
+                'Tổng Chi Nhánh',
+                stats.totalStores.toString(),
+                Icons.storefront_rounded,
+                const Color(0xFFEFF6FF),
                 const Color(0xFF0058BE),
-                '+2 mới'
+                '+2 mới',
               ),
               _buildModernStatCard(
-                'Doanh thu hôm nay', 
-                format.format(stats.todayRevenue), 
-                Icons.payments_rounded, 
-                const Color(0xFFECFDF5), 
+                'Doanh thu hôm nay',
+                format.format(stats.todayRevenue),
+                Icons.payments_rounded,
+                const Color(0xFFECFDF5),
                 const Color(0xFF10B981),
-                '+12%'
+                '+12%',
               ),
               _buildModernStatCard(
-                'Rủi ro Công nợ', 
-                format.format(stats.totalDebt), 
-                Icons.trending_down_rounded, 
-                const Color(0xFFFEF2F2), 
+                'Rủi ro Công nợ',
+                format.format(stats.totalDebt),
+                Icons.trending_down_rounded,
+                const Color(0xFFFEF2F2),
                 const Color(0xFFEF4444),
-                '-5%'
+                '-5%',
               ),
               _buildModernStatCard(
-                'Đơn chờ duyệt', 
-                stats.totalPendingOrders.toString(), 
-                Icons.assignment_late_rounded, 
-                const Color(0xFFFFFBEB), 
+                'Đơn chờ duyệt',
+                stats.totalPendingOrders.toString(),
+                Icons.assignment_late_rounded,
+                const Color(0xFFFFFBEB),
                 const Color(0xFFF59E0B),
-                '3 gấp'
+                '3 gấp',
               ),
             ],
           )
@@ -277,10 +305,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 height: 100,
                 width: double.infinity,
                 child: _buildModernStatCard(
-                  'Doanh thu hôm nay', 
-                  format.format(stats.todayRevenue), 
-                  Icons.payments_rounded, 
-                  const Color(0xFFECFDF5), 
+                  'Doanh thu hôm nay',
+                  format.format(stats.todayRevenue),
+                  Icons.payments_rounded,
+                  const Color(0xFFECFDF5),
                   const Color(0xFF10B981),
                   '+12%',
                   isFullWidth: true,
@@ -294,10 +322,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     child: SizedBox(
                       height: 140,
                       child: _buildModernStatCard(
-                        'Đơn chờ duyệt', 
-                        stats.totalPendingOrders.toString(), 
-                        Icons.assignment_late_rounded, 
-                        const Color(0xFFFFFBEB), 
+                        'Đơn chờ duyệt',
+                        stats.totalPendingOrders.toString(),
+                        Icons.assignment_late_rounded,
+                        const Color(0xFFFFFBEB),
                         const Color(0xFFF59E0B),
                         '3 gấp',
                       ),
@@ -308,10 +336,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     child: SizedBox(
                       height: 140,
                       child: _buildModernStatCard(
-                        'Tổng Chi Nhánh', 
-                        stats.totalStores.toString(), 
-                        Icons.storefront_rounded, 
-                        const Color(0xFFEFF6FF), 
+                        'Tổng Chi Nhánh',
+                        stats.totalStores.toString(),
+                        Icons.storefront_rounded,
+                        const Color(0xFFEFF6FF),
                         const Color(0xFF0058BE),
                         '+2 mới',
                       ),
@@ -325,10 +353,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 height: 100,
                 width: double.infinity,
                 child: _buildModernStatCard(
-                  'Rủi ro Công nợ', 
-                  format.format(stats.totalDebt), 
-                  Icons.trending_down_rounded, 
-                  const Color(0xFFFEF2F2), 
+                  'Rủi ro Công nợ',
+                  format.format(stats.totalDebt),
+                  Icons.trending_down_rounded,
+                  const Color(0xFFFEF2F2),
                   const Color(0xFFEF4444),
                   '-5%',
                   isFullWidth: true,
@@ -390,7 +418,12 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'Inter'),
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Inter',
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -422,14 +455,22 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: mappedBg,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         trend,
-                        style: TextStyle(color: mappedFg, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
+                        style: TextStyle(
+                          color: mappedFg,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Inter',
+                        ),
                       ),
                     ),
                   ],
@@ -452,14 +493,22 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                       child: Icon(icon, color: mappedFg, size: 20),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: mappedBg,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         trend,
-                        style: TextStyle(color: mappedFg, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
+                        style: TextStyle(
+                          color: mappedFg,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Inter',
+                        ),
                       ),
                     ),
                   ],
@@ -470,7 +519,12 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'Inter'),
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Inter',
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -502,7 +556,11 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       children: [
         const Text(
           'Tính năng Quản trị',
-          style: TextStyle(color: Color(0xFF334155), fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Color(0xFF334155),
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -515,35 +573,43 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
           children: [
             _buildActionCard(
               context,
-              'Danh mục & BOM', 
-              Icons.account_tree_rounded, 
-              const Color(0xFFF0FDF4), 
+              'Danh mục & BOM',
+              Icons.account_tree_rounded,
+              const Color(0xFFF0FDF4),
               const Color(0xFF16A34A),
               route: '/manager/catalog',
             ),
             _buildActionCard(
               context,
-              'Giám sát Tồn kho', 
-              Icons.inventory_2_rounded, 
-              const Color(0xFFFFF7ED), 
+              'Giám sát Tồn kho',
+              Icons.inventory_2_rounded,
+              const Color(0xFFFFF7ED),
               const Color(0xFFEA580C),
               route: '/manager/inventory',
             ),
             _buildActionCard(
               context,
-              'Báo cáo & Phân tích', 
-              Icons.analytics_rounded, 
-              const Color(0xFFF5F3FF), 
+              'Báo cáo & Phân tích',
+              Icons.analytics_rounded,
+              const Color(0xFFF5F3FF),
               const Color(0xFF7C3AED),
               route: '/manager/analytics',
             ),
             _buildActionCard(
               context,
-              'Quản lý Công nợ', 
-              Icons.account_balance_wallet_rounded, 
-              const Color(0xFFFEF2F2), 
+              'Quản lý Công nợ',
+              Icons.account_balance_wallet_rounded,
+              const Color(0xFFFEF2F2),
               const Color(0xFFDC2626),
               route: '/manager/debt',
+            ),
+            _buildActionCard(
+              context,
+              'Lịch sử duyệt đơn',
+              Icons.history_rounded,
+              const Color(0xFFEEF2FF),
+              const Color(0xFF4338CA),
+              route: '/manager/order-history',
             ),
           ],
         ),
@@ -551,7 +617,14 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     );
   }
 
-  Widget _buildActionCard(BuildContext context, String title, IconData icon, Color bgColor, Color iconColor, {String? route}) {
+  Widget _buildActionCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color bgColor,
+    Color iconColor, {
+    String? route,
+  }) {
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
@@ -565,8 +638,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 content: Text('Chức năng "$title" đang được phát triển!'),
                 backgroundColor: const Color(0xFF334155),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              )
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             );
           }
         },
@@ -581,7 +656,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 color: Colors.black.withOpacity(0.015),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
-              )
+              ),
             ],
           ),
           child: Column(
@@ -599,7 +674,11 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF334155), fontSize: 13, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -610,7 +689,11 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     );
   }
 
-  Widget _buildOrderCommandCenter(ManagerProvider provider, NumberFormat format, {bool isMobile = false}) {
+  Widget _buildOrderCommandCenter(
+    ManagerProvider provider,
+    NumberFormat format, {
+    bool isMobile = false,
+  }) {
     final pendingOnly = provider.pendingOrders
         .where((o) => o.orderStatus.toUpperCase() == 'PENDING')
         .toList();
@@ -625,7 +708,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             color: Colors.black.withOpacity(0.015),
             blurRadius: 8,
             offset: const Offset(0, 2),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -639,7 +722,11 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               children: [
                 const Text(
                   'Danh sách đơn chờ duyệt',
-                  style: TextStyle(color: Color(0xFF1E293B), fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Color(0xFF1E293B),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 InkWell(
                   onTap: () => provider.loadDashboardData(),
@@ -650,9 +737,13 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 20),
+                    child: const Icon(
+                      Icons.refresh_rounded,
+                      color: Color(0xFF64748B),
+                      size: 20,
+                    ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -662,7 +753,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 ? const Padding(
                     padding: EdgeInsets.all(40.0),
                     child: Center(
-                      child: Text('Không có đơn hàng nào cần duyệt.', style: TextStyle(color: Color(0xFF94A3B8))),
+                      child: Text(
+                        'Không có đơn hàng nào cần duyệt.',
+                        style: TextStyle(color: Color(0xFF94A3B8)),
+                      ),
                     ),
                   )
                 : ListView.separated(
@@ -670,7 +764,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     itemCount: pendingOnly.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final order = pendingOnly[index];
                       return UnifiedOrderCard(
@@ -697,12 +792,16 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             Expanded(
               child: pendingOnly.isEmpty
                   ? const Center(
-                      child: Text('Không có đơn hàng nào cần duyệt.', style: TextStyle(color: Color(0xFF94A3B8))),
+                      child: Text(
+                        'Không có đơn hàng nào cần duyệt.',
+                        style: TextStyle(color: Color(0xFF94A3B8)),
+                      ),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.all(24),
                       itemCount: pendingOnly.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 16),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 16),
                       itemBuilder: (context, index) {
                         final order = pendingOnly[index];
                         return UnifiedOrderCard(
@@ -768,13 +867,30 @@ class _ManagerMenuTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 14)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.5), size: 20),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: color.withOpacity(0.5),
+              size: 20,
+            ),
           ],
         ),
       ),

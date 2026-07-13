@@ -60,7 +60,41 @@ public class ManagerService : IManagerService
                 TotalAmount = o.TotalAmount,
                 CreatedAt = o.CreatedAt ?? DateTime.UtcNow,
                 OrderDate = o.CreatedAt ?? DateTime.UtcNow,
+                UpdatedAt = o.UpdatedAt,
+                Notes = o.Notes ?? string.Empty
+            })
+            .ToListAsync();
+    }
 
+    public async Task<List<ManagerPendingOrderDto>> GetOrderHistoryAsync(string? status = null)
+    {
+        var historyStatuses = new[] { "APPROVED", "REJECTED", "CANCELLED", "DELIVERING", "SHIPPING", "DISPATCHED", "SHIPPED", "DELIVERED" };
+
+        var query = _context.Orders
+            .Include(o => o.Store)
+            .Where(o => historyStatuses.Contains((o.OrderStatus ?? string.Empty).ToUpper()));
+
+        if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "ALL", StringComparison.OrdinalIgnoreCase))
+        {
+            var normalizedStatus = status.Trim().ToUpper();
+            query = query.Where(o => (o.OrderStatus ?? string.Empty).ToUpper() == normalizedStatus);
+        }
+
+        return await query
+            .OrderByDescending(o => o.UpdatedAt ?? o.CreatedAt)
+            .ThenByDescending(o => o.CreatedAt)
+            .Select(o => new ManagerPendingOrderDto
+            {
+                OrderId = o.OrderId,
+                OrderCode = o.OrderCode,
+                StoreName = o.Store.StoreName,
+                StoreId = o.StoreId,
+                ItemCount = o.OrderDetails.Count,
+                OrderStatus = o.OrderStatus ?? string.Empty,
+                TotalAmount = o.TotalAmount,
+                CreatedAt = o.CreatedAt ?? DateTime.UtcNow,
+                OrderDate = o.CreatedAt ?? DateTime.UtcNow,
+                UpdatedAt = o.UpdatedAt,
                 Notes = o.Notes ?? string.Empty
             })
             .ToListAsync();

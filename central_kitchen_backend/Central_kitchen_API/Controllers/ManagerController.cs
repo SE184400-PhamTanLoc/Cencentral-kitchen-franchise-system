@@ -31,6 +31,13 @@ public class ManagerController : ControllerBase
         return Ok(orders);
     }
 
+    [HttpGet("orders/history")]
+    public async Task<IActionResult> GetOrderHistory([FromQuery] string? status = null)
+    {
+        var orders = await _managerService.GetOrderHistoryAsync(status);
+        return Ok(orders);
+    }
+
     [HttpGet("inventory")]
     public async Task<IActionResult> GetChainInventory()
     {
