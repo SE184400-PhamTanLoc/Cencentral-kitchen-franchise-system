@@ -14,10 +14,12 @@ class InventoryProductDetailScreen extends StatefulWidget {
   const InventoryProductDetailScreen({super.key, required this.ingredient});
 
   @override
-  State<InventoryProductDetailScreen> createState() => _InventoryProductDetailScreenState();
+  State<InventoryProductDetailScreen> createState() =>
+      _InventoryProductDetailScreenState();
 }
 
-class _InventoryProductDetailScreenState extends State<InventoryProductDetailScreen> {
+class _InventoryProductDetailScreenState
+    extends State<InventoryProductDetailScreen> {
   final _quantityController = TextEditingController(text: '1');
 
   @override
@@ -30,7 +32,9 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<InventoryProvider>().fetchIngredientDetail(widget.ingredient.ingredientId);
+      context.read<InventoryProvider>().fetchIngredientDetail(
+        widget.ingredient.ingredientId,
+      );
     });
   }
 
@@ -49,7 +53,10 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
           preferredSize: const Size.fromHeight(1),
           child: Container(color: const Color(0xFFE2E8F0), height: 1),
         ),
-        title: const Text('Chi tiết nguyên liệu', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Chi tiết nguyên liệu',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             tooltip: 'Thêm lô mới',
@@ -86,37 +93,59 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Lô hàng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.primary)),
-                        Text('${provider.batches.length} lô', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
+                        const Text(
+                          'Lô hàng',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                        Text(
+                          '${provider.batches.length} lô',
+                          style: const TextStyle(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final batch = provider.batches[index];
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                        child: _BatchCard(
-                          batch: batch,
-                          onEdit: () => _openBatchEditorSheet(context, ingredient, existingBatch: batch),
-                          onDelete: () => _confirmDeleteBatch(context, batch),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final batch = provider.batches[index];
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                      child: _BatchCard(
+                        batch: batch,
+                        onEdit: () => _openBatchEditorSheet(
+                          context,
+                          ingredient,
+                          existingBatch: batch,
                         ),
-                      );
-                    },
-                    childCount: provider.batches.length,
-                  ),
+                        onDelete: () => _confirmDeleteBatch(context, batch),
+                      ),
+                    );
+                  }, childCount: provider.batches.length),
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                  child: _RecipeSection(
+                    child: _RecipeSection(
                       ingredient: ingredient,
                       quantityController: _quantityController,
                       onBuildPlan: () async {
-                        final qty = double.tryParse(_quantityController.text) ?? 1;
-                        final success = await context.read<InventoryProvider>().buildProductionPlan(ingredient.ingredientId, qty);
+                        final qty =
+                            double.tryParse(_quantityController.text) ?? 1;
+                        final kitchenId =
+                            context.read<AuthProvider>().kitchenId ?? 1;
+                        final success = await context
+                            .read<InventoryProvider>()
+                            .buildProductionPlan(
+                              ingredient.ingredientId,
+                              qty,
+                              kitchenId: kitchenId,
+                            );
                         if (!context.mounted) return;
                         if (success) {
                           showModalBottomSheet(
@@ -124,7 +153,9 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                             showDragHandle: true,
                             backgroundColor: Colors.white,
                             shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(28),
+                              ),
                             ),
                             builder: (_) => _ProductionPlanSheet(
                               provider: provider,
@@ -136,7 +167,11 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(provider.errorMessage ?? 'Không thể tính BOM')),
+                            SnackBar(
+                              content: Text(
+                                provider.errorMessage ?? 'Không thể tính BOM',
+                              ),
+                            ),
                           );
                         }
                       },
@@ -160,15 +195,27 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
     final isEditMode = existingBatch != null;
     if (!isEditMode && !ingredient.isRawMaterial) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Chỉ cho phép nhập kho thủ công nguyên liệu thô. Bán thành phẩm và thành phẩm phải được sản xuất theo công thức BOM.')),
+        const SnackBar(
+          content: Text(
+            'Chỉ cho phép nhập kho thủ công nguyên liệu thô. Bán thành phẩm và thành phẩm phải được sản xuất theo công thức BOM.',
+          ),
+        ),
       );
       return;
     }
-    final batchCodeController = TextEditingController(text: existingBatch?.batchCode ?? '');
-    final quantityController = TextEditingController(text: (existingBatch?.quantity ?? 0).toStringAsFixed(2));
-    final remainingController = TextEditingController(text: (existingBatch?.remainingQuantity ?? 0).toStringAsFixed(2));
+    final batchCodeController = TextEditingController(
+      text: existingBatch?.batchCode ?? '',
+    );
+    final quantityController = TextEditingController(
+      text: (existingBatch?.quantity ?? 0).toStringAsFixed(2),
+    );
+    final remainingController = TextEditingController(
+      text: (existingBatch?.remainingQuantity ?? 0).toStringAsFixed(2),
+    );
     final manufactureDateController = TextEditingController(
-      text: existingBatch?.manufactureDate?.toIso8601String().split('T').first ?? '',
+      text:
+          existingBatch?.manufactureDate?.toIso8601String().split('T').first ??
+          '',
     );
     final expiryDateController = TextEditingController(
       text: existingBatch?.expiryDate.toIso8601String().split('T').first ?? '',
@@ -187,140 +234,198 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
             padding: const EdgeInsets.all(20),
             child: StatefulBuilder(
               builder: (dialogContext, setState) {
-              Future<void> pickDate(TextEditingController controller) async {
-                final selected = await showDatePicker(
-                  context: dialogContext,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime.now().subtract(const Duration(days: 3650)),
-                  lastDate: DateTime.now().add(const Duration(days: 3650)),
-                );
-                if (selected != null && dialogContext.mounted) {
-                  controller.text = selected.toIso8601String().split('T').first;
-                  setState(() {});
+                Future<void> pickDate(TextEditingController controller) async {
+                  final selected = await showDatePicker(
+                    context: dialogContext,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now().subtract(
+                      const Duration(days: 3650),
+                    ),
+                    lastDate: DateTime.now().add(const Duration(days: 3650)),
+                  );
+                  if (selected != null && dialogContext.mounted) {
+                    controller.text = selected
+                        .toIso8601String()
+                        .split('T')
+                        .first;
+                    setState(() {});
+                  }
                 }
-              }
 
-              return SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isEditMode ? 'Cập nhật lô sản xuất' : 'Tạo lô sản xuất',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                return SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            isEditMode
+                                ? 'Cập nhật lô sản xuất'
+                                : 'Tạo lô sản xuất',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(dialogContext),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        ingredient.name,
+                        style: const TextStyle(
+                          color: AppTheme.onSurfaceVariant,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(dialogContext),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(height: 18),
+                      TextFormField(
+                        controller: batchCodeController,
+                        decoration: const InputDecoration(labelText: 'Mã lô'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: quantityController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Tổng số lượng',
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(ingredient.name, style: const TextStyle(color: AppTheme.onSurfaceVariant)),
-                    const SizedBox(height: 18),
-                    TextFormField(
-                      controller: batchCodeController,
-                      decoration: const InputDecoration(labelText: 'Mã lô'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: quantityController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Tổng số lượng'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: remainingController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Số lượng còn lại'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: manufactureDateController,
-                      readOnly: true,
-                      onTap: () => pickDate(manufactureDateController),
-                      decoration: const InputDecoration(
-                        labelText: 'Ngày sản xuất',
-                        suffixIcon: Icon(Icons.date_range_outlined),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: expiryDateController,
-                      readOnly: true,
-                      onTap: () => pickDate(expiryDateController),
-                      decoration: const InputDecoration(
-                        labelText: 'Hạn sử dụng',
-                        suffixIcon: Icon(Icons.event_available_outlined),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: remainingController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Số lượng còn lại',
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          final quantity = double.tryParse(quantityController.text) ?? 0;
-                          final remaining = double.tryParse(remainingController.text) ?? 0;
-                          if (batchCodeController.text.trim().isEmpty || quantity <= 0 || expiryDateController.text.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đủ mã lô, số lượng và hạn sử dụng.')));
-                            return;
-                          }
-
-                          final payload = {
-                            'batchCode': batchCodeController.text.trim(),
-                            'ingredientId': ingredient.ingredientId,
-                            'quantity': quantity,
-                            'remainingQuantity': remaining,
-                            'manufactureDate': manufactureDateController.text.isEmpty ? null : manufactureDateController.text,
-                            'expiryDate': expiryDateController.text,
-                            'kitchenId': kitchenId,
-                          };
-
-                          final success = isEditMode
-                              ? await inventoryProvider.updateBatch(existingBatch.batchId, payload)
-                              : await inventoryProvider.createBatch(payload);
-
-                          if (!dialogContext.mounted) return;
-                          if (success) {
-                            Navigator.pop(dialogContext);
-                            await inventoryProvider.fetchIngredientDetail(ingredient.ingredientId);
-                            messenger.showSnackBar(
-                              SnackBar(content: Text(isEditMode ? 'Cập nhật lô thành công!' : 'Tạo lô thành công!')),
-                            );
-                          } else {
-                            messenger.showSnackBar(
-                              SnackBar(content: Text(inventoryProvider.errorMessage ?? 'Thao tác lô thất bại')),
-                            );
-                          }
-                        },
-                        child: Text(isEditMode ? 'Cập nhật lô' : 'Lưu lô'),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: manufactureDateController,
+                        readOnly: true,
+                        onTap: () => pickDate(manufactureDateController),
+                        decoration: const InputDecoration(
+                          labelText: 'Ngày sản xuất',
+                          suffixIcon: Icon(Icons.date_range_outlined),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: expiryDateController,
+                        readOnly: true,
+                        onTap: () => pickDate(expiryDateController),
+                        decoration: const InputDecoration(
+                          labelText: 'Hạn sử dụng',
+                          suffixIcon: Icon(Icons.event_available_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final quantity =
+                                double.tryParse(quantityController.text) ?? 0;
+                            final remaining =
+                                double.tryParse(remainingController.text) ?? 0;
+                            if (batchCodeController.text.trim().isEmpty ||
+                                quantity <= 0 ||
+                                expiryDateController.text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Vui lòng nhập đủ mã lô, số lượng và hạn sử dụng.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final payload = {
+                              'batchCode': batchCodeController.text.trim(),
+                              'ingredientId': ingredient.ingredientId,
+                              'quantity': quantity,
+                              'remainingQuantity': remaining,
+                              'manufactureDate':
+                                  manufactureDateController.text.isEmpty
+                                  ? null
+                                  : manufactureDateController.text,
+                              'expiryDate': expiryDateController.text,
+                              'kitchenId': kitchenId,
+                            };
+
+                            final success = isEditMode
+                                ? await inventoryProvider.updateBatch(
+                                    existingBatch.batchId,
+                                    payload,
+                                  )
+                                : await inventoryProvider.createBatch(payload);
+
+                            if (!dialogContext.mounted) return;
+                            if (success) {
+                              Navigator.pop(dialogContext);
+                              await inventoryProvider.fetchIngredientDetail(
+                                ingredient.ingredientId,
+                              );
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isEditMode
+                                        ? 'Cập nhật lô thành công!'
+                                        : 'Tạo lô thành công!',
+                                  ),
+                                ),
+                              );
+                            } else {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    inventoryProvider.errorMessage ??
+                                        'Thao tác lô thất bại',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Text(isEditMode ? 'Cập nhật lô' : 'Lưu lô'),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-      );
-    },
-  );
+        );
+      },
+    );
   }
 
   Future<void> _showExecuteProductionDialog(
     BuildContext hostContext,
     ProductionPlanModel plan,
   ) async {
-    final timestamp = DateTime.now().millisecondsSinceEpoch % 1000000; // Lấy 6 số cuối để giảm thiểu trùng lặp
-    final skuPart = (plan.outputSku ?? 'SKU').replaceAll(" ", "-").toUpperCase();
-    final defaultBatchCode = 'BAT-$skuPart-${DateTime.now().toIso8601String().split("T").first.replaceAll("-", "")}-$timestamp';
+    final timestamp =
+        DateTime.now().millisecondsSinceEpoch %
+        1000000; // Lấy 6 số cuối để giảm thiểu trùng lặp
+    final skuPart = (plan.outputSku ?? 'SKU')
+        .replaceAll(" ", "-")
+        .toUpperCase();
+    final defaultBatchCode =
+        'BAT-$skuPart-${DateTime.now().toIso8601String().split("T").first.replaceAll("-", "")}-$timestamp';
     final batchCodeController = TextEditingController(text: defaultBatchCode);
-    final defaultExpiry = DateTime.now().add(const Duration(days: 7)).toIso8601String().split('T').first;
+    final defaultExpiry = DateTime.now()
+        .add(const Duration(days: 7))
+        .toIso8601String()
+        .split('T')
+        .first;
     final expiryDateController = TextEditingController(text: defaultExpiry);
 
     await showModalBottomSheet(
@@ -329,7 +434,9 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
       backgroundColor: Colors.transparent,
       builder: (dialogContext) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(dialogContext).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+          ),
           child: Container(
             decoration: const BoxDecoration(
               color: AppTheme.background,
@@ -346,7 +453,11 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                     children: [
                       const Text(
                         'Thực thi sản xuất',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.primary,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -364,12 +475,18 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                   const SizedBox(height: 18),
                   TextFormField(
                     controller: batchCodeController,
-                    decoration: const InputDecoration(labelText: 'Mã lô thành phẩm', prefixIcon: Icon(Icons.qr_code)),
+                    decoration: const InputDecoration(
+                      labelText: 'Mã lô thành phẩm',
+                      prefixIcon: Icon(Icons.qr_code),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: expiryDateController,
-                    decoration: const InputDecoration(labelText: 'Hạn sử dụng (YYYY-MM-DD)', prefixIcon: Icon(Icons.event)),
+                    decoration: const InputDecoration(
+                      labelText: 'Hạn sử dụng (YYYY-MM-DD)',
+                      prefixIcon: Icon(Icons.event),
+                    ),
                     keyboardType: TextInputType.datetime,
                   ),
                   const SizedBox(height: 24),
@@ -377,9 +494,14 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                     width: double.infinity,
                     child: FilledButton.icon(
                       onPressed: () async {
-                        if (batchCodeController.text.trim().isEmpty || expiryDateController.text.trim().isEmpty) {
+                        if (batchCodeController.text.trim().isEmpty ||
+                            expiryDateController.text.trim().isEmpty) {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            const SnackBar(content: Text('Vui lòng nhập đủ mã lô và hạn sử dụng.')),
+                            const SnackBar(
+                              content: Text(
+                                'Vui lòng nhập đủ mã lô và hạn sử dụng.',
+                              ),
+                            ),
                           );
                           return;
                         }
@@ -387,25 +509,40 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
                         final auth = hostContext.read<AuthProvider>();
                         final kitchenId = auth.kitchenId ?? 1;
 
-                        final success = await dialogContext.read<InventoryProvider>().executeProduction({
-                          'outputIngredientId': plan.outputIngredientId,
-                          'requestedQuantity': plan.requestedQuantity,
-                          'batchCode': batchCodeController.text.trim(),
-                          'expiryDate': expiryDateController.text.trim(),
-                          'kitchenId': kitchenId,
-                        });
+                        final success = await dialogContext
+                            .read<InventoryProvider>()
+                            .executeProduction({
+                              'outputIngredientId': plan.outputIngredientId,
+                              'requestedQuantity': plan.requestedQuantity,
+                              'batchCode': batchCodeController.text.trim(),
+                              'expiryDate': expiryDateController.text.trim(),
+                              'kitchenId': kitchenId,
+                            });
 
                         if (!dialogContext.mounted) return;
                         if (success) {
                           Navigator.pop(dialogContext);
-                          hostContext.read<InventoryProvider>().clearProductionPlan();
-                          await hostContext.read<InventoryProvider>().fetchIngredientDetail(plan.outputIngredientId);
+                          hostContext
+                              .read<InventoryProvider>()
+                              .clearProductionPlan();
+                          await hostContext
+                              .read<InventoryProvider>()
+                              .fetchIngredientDetail(plan.outputIngredientId);
                           ScaffoldMessenger.of(hostContext).showSnackBar(
-                            const SnackBar(content: Text('Thực thi sản xuất thành công!')),
+                            const SnackBar(
+                              content: Text('Thực thi sản xuất thành công!'),
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(content: Text(dialogContext.read<InventoryProvider>().errorMessage ?? 'Thực thi sản xuất thất bại')),
+                            SnackBar(
+                              content: Text(
+                                dialogContext
+                                        .read<InventoryProvider>()
+                                        .errorMessage ??
+                                    'Thực thi sản xuất thất bại',
+                              ),
+                            ),
                           );
                         }
                       },
@@ -422,7 +559,10 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
     );
   }
 
-  Future<void> _confirmDeleteBatch(BuildContext context, BatchModel batch) async {
+  Future<void> _confirmDeleteBatch(
+    BuildContext context,
+    BatchModel batch,
+  ) async {
     final provider = context.read<InventoryProvider>();
     final confirmed = await showDialog<bool>(
       context: context,
@@ -452,7 +592,9 @@ class _InventoryProductDetailScreenState extends State<InventoryProductDetailScr
 
     if (success) {
       await provider.fetchIngredientDetail(widget.ingredient.ingredientId);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xóa lô thành công!')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Xóa lô thành công!')));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(provider.errorMessage ?? 'Xóa lô thất bại')),
@@ -498,7 +640,9 @@ class _HeaderCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
-                    ingredient.isRawMaterial ? Icons.grain_outlined : Icons.bakery_dining_outlined,
+                    ingredient.isRawMaterial
+                        ? Icons.grain_outlined
+                        : Icons.bakery_dining_outlined,
                     color: Colors.white,
                     size: 28,
                   ),
@@ -511,12 +655,22 @@ class _HeaderCard extends StatelessWidget {
                   children: [
                     Text(
                       ingredient.name,
-                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      ingredient.isRawMaterial ? 'Nguyên liệu thô (RAW)' : 'Bán thành phẩm (BFP)',
-                      style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12, fontWeight: FontWeight.w600),
+                      ingredient.isRawMaterial
+                          ? 'Nguyên liệu thô (RAW)'
+                          : 'Bán thành phẩm (BFP)',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.75),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -531,9 +685,15 @@ class _HeaderCard extends StatelessWidget {
           const SizedBox(height: 18),
           Row(
             children: [
-              _StatPill(label: 'Tồn khả dụng', value: ingredient.availableQuantity.toStringAsFixed(2)),
+              _StatPill(
+                label: 'Tồn khả dụng',
+                value: ingredient.availableQuantity.toStringAsFixed(2),
+              ),
               const SizedBox(width: 10),
-              _StatPill(label: 'Ngưỡng tối thiểu', value: ingredient.minStockLevel.toStringAsFixed(2)),
+              _StatPill(
+                label: 'Ngưỡng tối thiểu',
+                value: ingredient.minStockLevel.toStringAsFixed(2),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -545,12 +705,22 @@ class _HeaderCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(isLowStock ? Icons.warning_amber_rounded : Icons.verified_outlined, color: Colors.white),
+                Icon(
+                  isLowStock
+                      ? Icons.warning_amber_rounded
+                      : Icons.verified_outlined,
+                  color: Colors.white,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    isLowStock ? 'Tồn kho đang thấp hơn ngưỡng cảnh báo.' : 'Tồn kho đang trong trạng thái an toàn.',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    isLowStock
+                        ? 'Tồn kho đang thấp hơn ngưỡng cảnh báo.'
+                        : 'Tồn kho đang trong trạng thái an toàn.',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -581,9 +751,22 @@ class _StatPill extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12)),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.75),
+                fontSize: 12,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
         ),
       ),
@@ -600,9 +783,22 @@ class _InfoGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _InfoCard(label: 'Giá nhập', value: '${ingredient.unitPrice.toStringAsFixed(0)} đ/${ingredient.unit}')),
+        Expanded(
+          child: _InfoCard(
+            label: 'Giá nhập',
+            value:
+                '${ingredient.unitPrice.toStringAsFixed(0)} đ/${ingredient.unit}',
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _InfoCard(label: 'Loại', value: ingredient.isRawMaterial ? 'Nguyên liệu thô' : 'Bán thành phẩm')),
+        Expanded(
+          child: _InfoCard(
+            label: 'Loại',
+            value: ingredient.isRawMaterial
+                ? 'Nguyên liệu thô'
+                : 'Bán thành phẩm',
+          ),
+        ),
       ],
     );
   }
@@ -626,9 +822,22 @@ class _InfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(color: AppTheme.primary, fontSize: 14, fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppTheme.primary,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -653,13 +862,22 @@ class _RecipeOverviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Công thức quy đổi / BOM', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary)),
+          const Text(
+            'Công thức quy đổi / BOM',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppTheme.primary,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             ingredient.recipeDescription?.isNotEmpty == true
                 ? ingredient.recipeDescription!
                 : 'Chưa có mô tả định mức cho nguyên liệu này.',
-            style: const TextStyle(color: AppTheme.onSurfaceVariant, height: 1.35),
+            style: const TextStyle(
+              color: AppTheme.onSurfaceVariant,
+              height: 1.35,
+            ),
           ),
           const SizedBox(height: 14),
           if (inputs.isEmpty)
@@ -673,7 +891,10 @@ class _RecipeOverviewCard extends StatelessWidget {
               runSpacing: 10,
               children: inputs.map((input) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.background,
                     borderRadius: BorderRadius.circular(16),
@@ -682,11 +903,20 @@ class _RecipeOverviewCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(input.inputIngredientName, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                      Text(
+                        input.inputIngredientName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primary,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         '${input.quantityRequired.toStringAsFixed(4)} ${input.unit}',
-                        style: const TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
+                        style: const TextStyle(
+                          color: AppTheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -704,7 +934,11 @@ class _BatchCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const _BatchCard({required this.batch, required this.onEdit, required this.onDelete});
+  const _BatchCard({
+    required this.batch,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -726,27 +960,51 @@ class _BatchCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(batch.batchCode, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                child: Text(
+                  batch.batchCode,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primary,
+                  ),
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: expired ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                  color: expired
+                      ? Colors.red.withOpacity(0.1)
+                      : Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   expired ? 'Hết hạn' : 'Còn hạn',
-                  style: TextStyle(color: expired ? Colors.red : Colors.green, fontWeight: FontWeight.w600, fontSize: 12),
+                  style: TextStyle(
+                    color: expired ? Colors.red : Colors.green,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Text('Bếp: ${batch.kitchenName}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
+          Text(
+            'Bếp: ${batch.kitchenName}',
+            style: const TextStyle(color: AppTheme.onSurfaceVariant),
+          ),
           const SizedBox(height: 6),
-          Text('Số lượng còn lại: $remaining / $total', style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            'Số lượng còn lại: $remaining / $total',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 6),
-          Text('HSD: ${batch.expiryDate.day.toString().padLeft(2, '0')}/${batch.expiryDate.month.toString().padLeft(2, '0')}/${batch.expiryDate.year}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
+          Text(
+            'HSD: ${batch.expiryDate.day.toString().padLeft(2, '0')}/${batch.expiryDate.month.toString().padLeft(2, '0')}/${batch.expiryDate.year}',
+            style: const TextStyle(color: AppTheme.onSurfaceVariant),
+          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -760,7 +1018,10 @@ class _BatchCard extends StatelessWidget {
               TextButton.icon(
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline, color: AppTheme.error),
-                label: const Text('Xóa', style: TextStyle(color: AppTheme.error)),
+                label: const Text(
+                  'Xóa',
+                  style: TextStyle(color: AppTheme.error),
+                ),
               ),
             ],
           ),
@@ -793,7 +1054,13 @@ class _RecipeSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Lập BOM / Production Plan', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary)),
+          const Text(
+            'Lập BOM / Production Plan',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppTheme.primary,
+            ),
+          ),
           const SizedBox(height: 10),
           Text(
             ingredient.hasRecipe
@@ -838,7 +1105,9 @@ class _ProductionPlanSheet extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final shortMaterials = plan.materials.where((m) => m.shortageQuantity > 0).toList();
+    final shortMaterials = plan.materials
+        .where((m) => m.shortageQuantity > 0)
+        .toList();
 
     return SafeArea(
       child: Padding(
@@ -847,9 +1116,19 @@ class _ProductionPlanSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(plan.outputIngredientName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.primary)),
+            Text(
+              plan.outputIngredientName,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.primary,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('Số lượng yêu cầu: ${plan.requestedQuantity}', style: const TextStyle(color: AppTheme.onSurfaceVariant)),
+            Text(
+              'Số lượng yêu cầu: ${plan.requestedQuantity}',
+              style: const TextStyle(color: AppTheme.onSurfaceVariant),
+            ),
             const SizedBox(height: 18),
             if (shortMaterials.isEmpty)
               Container(
@@ -868,7 +1147,10 @@ class _ProductionPlanSheet extends StatelessWidget {
                     Expanded(
                       child: const Text(
                         'Tất cả nguyên liệu đều đủ đáp ứng. Có thể thực thi sản xuất.',
-                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -890,7 +1172,12 @@ class _ProductionPlanSheet extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text(item.ingredientName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                            child: Text(
+                              item.ingredientName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                           const Text(
                             'Thiếu',
@@ -902,9 +1189,16 @@ class _ProductionPlanSheet extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text('Cần: ${item.requiredQuantity.toStringAsFixed(2)} ${item.unit}'),
-                      Text('Khả dụng: ${item.availableQuantity.toStringAsFixed(2)} ${item.unit}'),
-                      Text('Thiếu: ${item.shortageQuantity.toStringAsFixed(2)} ${item.unit}', style: const TextStyle(color: Colors.red)),
+                      Text(
+                        'Cần: ${item.requiredQuantity.toStringAsFixed(2)} ${item.unit}',
+                      ),
+                      Text(
+                        'Khả dụng: ${item.availableQuantity.toStringAsFixed(2)} ${item.unit}',
+                      ),
+                      Text(
+                        'Thiếu: ${item.shortageQuantity.toStringAsFixed(2)} ${item.unit}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ],
                   ),
                 ),
@@ -922,7 +1216,9 @@ class _ProductionPlanSheet extends StatelessWidget {
                   backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),

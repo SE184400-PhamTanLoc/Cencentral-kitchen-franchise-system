@@ -119,6 +119,8 @@ public class InventoryService : IInventoryService
 
     public async Task<ProductionPlanResponseDto> BuildProductionPlanAsync(ProductionPlanRequestDto dto, int? kitchenId = null)
     {
+        kitchenId ??= dto.KitchenId;
+
         var outputIngredient = await _ingredientRepository.GetByIdAsync(dto.OutputIngredientId);
         if (outputIngredient == null)
             throw new InvalidOperationException("Không tìm thấy nguyên liệu đầu ra.");
@@ -342,11 +344,19 @@ public class InventoryService : IInventoryService
 
     private static decimal GetAvailableQuantity(Ingredient ingredient, int? kitchenId = null)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
         if (kitchenId.HasValue)
         {
-            return ingredient.Batches?.Where(b => b.KitchenId == kitchenId.Value).Sum(b => b.RemainingQuantity) ?? 0m;
+            return ingredient.Batches?
+                .Where(b => b.KitchenId == kitchenId.Value)
+                .Where(b => b.RemainingQuantity > 0 && b.ExpiryDate >= today)
+                .Sum(b => b.RemainingQuantity) ?? 0m;
         }
-        return ingredient.Batches?.Sum(b => b.RemainingQuantity) ?? 0m;
+
+        return ingredient.Batches?
+            .Where(b => b.RemainingQuantity > 0 && b.ExpiryDate >= today)
+            .Sum(b => b.RemainingQuantity) ?? 0m;
     }
 
     private static IngredientSummaryDto MapIngredientSummary(Ingredient ingredient)
@@ -582,10 +592,11 @@ public class InventoryService : IInventoryService
         var planRequest = new ProductionPlanRequestDto
         {
             OutputIngredientId = dto.OutputIngredientId,
-            RequestedQuantity = dto.RequestedQuantity
+            RequestedQuantity = dto.RequestedQuantity,
+            KitchenId = dto.KitchenId
         };
 
-        var plan = await BuildProductionPlanAsync(planRequest);
+        var plan = await BuildProductionPlanAsync(planRequest, dto.KitchenId);
 
         if (plan.Materials.Any(m => m.ShortageQuantity > 0))
         {

@@ -53,6 +53,7 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
   final Map<int, TextEditingController> _controllers = {};
   final TextEditingController _notesController = TextEditingController();
   bool _isActionLoading = false;
+  String? _inlineActionError;
 
   InputDecoration _buildInputDecoration(String label, IconData icon) {
     return InputDecoration(
@@ -113,6 +114,41 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
       b.write(p[i]);
     }
     return '${b.toString()} đ';
+  }
+
+  Widget _buildInlineErrorBanner(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(
+              Icons.error_outline_rounded,
+              color: AppTheme.error,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppTheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -198,6 +234,10 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (_inlineActionError != null) ...[
+                          _buildInlineErrorBanner(_inlineActionError!),
+                          const SizedBox(height: 16),
+                        ],
                         // 5-step progress timeline
                         _buildTimeline(details.orderStatus),
                         const SizedBox(height: 16),
@@ -1161,7 +1201,10 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
   }
 
   Future<void> _dispatchOrder(BuildContext context, int orderId) async {
-    setState(() => _isActionLoading = true);
+    setState(() {
+      _isActionLoading = true;
+      _inlineActionError = null;
+    });
     final success = await context.read<InventoryProvider>().dispatchOrder(
       orderId,
     );
@@ -1169,6 +1212,7 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
 
     if (mounted) {
       if (success) {
+        setState(() => _inlineActionError = null);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Xuất kho giao hàng thành công!'),
@@ -1181,9 +1225,7 @@ class _SharedOrderDetailsModalState extends State<SharedOrderDetailsModal> {
         final errorMsg =
             context.read<InventoryProvider>().errorMessage ??
             'Xuất kho thất bại.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg), backgroundColor: AppTheme.error),
-        );
+        setState(() => _inlineActionError = errorMsg);
       }
     }
   }

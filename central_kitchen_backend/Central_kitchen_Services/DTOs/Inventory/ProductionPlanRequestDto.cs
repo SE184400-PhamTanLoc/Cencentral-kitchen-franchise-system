@@ -9,5 +9,6 @@ public class ProductionPlanRequestDto
 
     [Range(0.01, double.MaxValue, ErrorMessage = "Số lượng yêu cầu phải lớn hơn 0")]
     public decimal RequestedQuantity { get; set; }
-}
 
+    public int? KitchenId { get; set; }
+}

@@ -39,17 +39,24 @@ class InventoryProvider with ChangeNotifier {
 
   List<IngredientModel> get filteredIngredients {
     return _ingredients.where((item) {
-      final matchesSearch = item.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          item.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           item.sku.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesFilter = _rawFilter == null || item.isRawMaterial == _rawFilter;
+      final matchesFilter =
+          _rawFilter == null || item.isRawMaterial == _rawFilter;
       return matchesSearch && matchesFilter;
     }).toList();
   }
 
   List<BatchModel> get filteredBatches {
     return _batches.where((batch) {
-      final matchesSearch = batch.batchCode.toLowerCase().contains(_batchSearchQuery.toLowerCase()) ||
-          batch.ingredientName.toLowerCase().contains(_batchSearchQuery.toLowerCase());
+      final matchesSearch =
+          batch.batchCode.toLowerCase().contains(
+            _batchSearchQuery.toLowerCase(),
+          ) ||
+          batch.ingredientName.toLowerCase().contains(
+            _batchSearchQuery.toLowerCase(),
+          );
       final matchesStatus = switch (_batchStatusFilter) {
         'expired' => batch.isExpired,
         'active' => !batch.isExpired,
@@ -85,12 +92,16 @@ class InventoryProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      _selectedIngredient = await _inventoryDatasource.getIngredientById(ingredientId);
+      _selectedIngredient = await _inventoryDatasource.getIngredientById(
+        ingredientId,
+      );
       _batches
         ..clear()
         ..addAll(_selectedIngredient == null ? [] : []);
       if (_selectedIngredient != null) {
-        _batches.addAll(await _inventoryDatasource.getBatches(ingredientId: ingredientId));
+        _batches.addAll(
+          await _inventoryDatasource.getBatches(ingredientId: ingredientId),
+        );
       }
       _isLoading = false;
       notifyListeners();
@@ -129,7 +140,12 @@ class InventoryProvider with ChangeNotifier {
     try {
       _batches
         ..clear()
-        ..addAll(await _inventoryDatasource.getBatches(ingredientId: ingredientId, kitchenId: kitchenId));
+        ..addAll(
+          await _inventoryDatasource.getBatches(
+            ingredientId: ingredientId,
+            kitchenId: kitchenId,
+          ),
+        );
       notifyListeners();
     } catch (e) {
       _errorMessage = 'Không thể tải danh sách lô.';
@@ -219,7 +235,11 @@ class InventoryProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> buildProductionPlan(int outputIngredientId, double requestedQuantity) async {
+  Future<bool> buildProductionPlan(
+    int outputIngredientId,
+    double requestedQuantity, {
+    int? kitchenId,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -227,6 +247,7 @@ class InventoryProvider with ChangeNotifier {
       _productionPlan = await _inventoryDatasource.buildProductionPlan({
         'outputIngredientId': outputIngredientId,
         'requestedQuantity': requestedQuantity,
+        ...?(kitchenId == null ? null : {'kitchenId': kitchenId}),
       });
       _isLoading = false;
       notifyListeners();
@@ -245,7 +266,13 @@ class InventoryProvider with ChangeNotifier {
     notifyListeners();
     try {
       final data = await _inventoryDatasource.getPendingOrders(kitchenId);
-      _pendingOrders = data.map((json) => PendingOrderModel.fromJson(Map<String, dynamic>.from(json as Map))).toList();
+      _pendingOrders = data
+          .map(
+            (json) => PendingOrderModel.fromJson(
+              Map<String, dynamic>.from(json as Map),
+            ),
+          )
+          .toList();
     } catch (e) {
       _errorMessage = 'Không thể tải danh sách đơn hàng chờ.';
     } finally {
@@ -259,7 +286,9 @@ class InventoryProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      _autoProductionPlan = await _inventoryDatasource.buildAutoProductionPlan(kitchenId);
+      _autoProductionPlan = await _inventoryDatasource.buildAutoProductionPlan(
+        kitchenId,
+      );
       _isLoading = false;
       notifyListeners();
       return true;
@@ -288,7 +317,10 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = _getErrorMessage(e, 'Thực thi sản xuất thất bại. Vui lòng kiểm tra lại số lượng tồn kho nguyên liệu thô.');
+      _errorMessage = _getErrorMessage(
+        e,
+        'Thực thi sản xuất thất bại. Vui lòng kiểm tra lại số lượng tồn kho nguyên liệu thô.',
+      );
       notifyListeners();
       return false;
     }
@@ -307,7 +339,10 @@ class InventoryProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = _getErrorMessage(e, 'Xuất kho thất bại. Vui lòng kiểm tra lại tồn kho Bếp Trung Tâm.');
+      _errorMessage = _getErrorMessage(
+        e,
+        'Xuất kho thất bại. Vui lòng kiểm tra lại tồn kho Bếp Trung Tâm.',
+      );
       notifyListeners();
       return false;
     }
