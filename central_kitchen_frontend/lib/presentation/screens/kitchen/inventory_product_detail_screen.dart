@@ -32,8 +32,10 @@ class _InventoryProductDetailScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final kitchenId = context.read<AuthProvider>().kitchenId;
       context.read<InventoryProvider>().fetchIngredientDetail(
         widget.ingredient.ingredientId,
+        kitchenId: kitchenId,
       );
     });
   }
@@ -207,10 +209,14 @@ class _InventoryProductDetailScreenState
       text: existingBatch?.batchCode ?? '',
     );
     final quantityController = TextEditingController(
-      text: (existingBatch?.quantity ?? 0).toStringAsFixed(2),
+      text: existingBatch == null
+          ? ''
+          : existingBatch.quantity.toStringAsFixed(2),
     );
     final remainingController = TextEditingController(
-      text: (existingBatch?.remainingQuantity ?? 0).toStringAsFixed(2),
+      text: existingBatch == null
+          ? ''
+          : existingBatch.remainingQuantity.toStringAsFixed(2),
     );
     final manufactureDateController = TextEditingController(
       text:
@@ -333,8 +339,15 @@ class _InventoryProductDetailScreenState
                           onPressed: () async {
                             final quantity =
                                 double.tryParse(quantityController.text) ?? 0;
-                            final remaining =
-                                double.tryParse(remainingController.text) ?? 0;
+                            final parsedRemaining = double.tryParse(
+                              remainingController.text,
+                            );
+                            final remaining = isEditMode
+                                ? (parsedRemaining ?? 0)
+                                : ((parsedRemaining == null ||
+                                          parsedRemaining <= 0)
+                                      ? quantity
+                                      : parsedRemaining);
                             if (batchCodeController.text.trim().isEmpty ||
                                 quantity <= 0 ||
                                 expiryDateController.text.isEmpty) {
@@ -342,6 +355,17 @@ class _InventoryProductDetailScreenState
                                 const SnackBar(
                                   content: Text(
                                     'Vui lòng nhập đủ mã lô, số lượng và hạn sử dụng.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (remaining < 0 || remaining > quantity) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Số lượng còn lại phải từ 0 đến nhỏ hơn hoặc bằng tổng số lượng.',
                                   ),
                                 ),
                               );
@@ -373,6 +397,7 @@ class _InventoryProductDetailScreenState
                               Navigator.pop(dialogContext);
                               await inventoryProvider.fetchIngredientDetail(
                                 ingredient.ingredientId,
+                                kitchenId: kitchenId,
                               );
                               messenger.showSnackBar(
                                 SnackBar(
@@ -527,7 +552,10 @@ class _InventoryProductDetailScreenState
                               .clearProductionPlan();
                           await hostContext
                               .read<InventoryProvider>()
-                              .fetchIngredientDetail(plan.outputIngredientId);
+                              .fetchIngredientDetail(
+                                plan.outputIngredientId,
+                                kitchenId: kitchenId,
+                              );
                           ScaffoldMessenger.of(hostContext).showSnackBar(
                             const SnackBar(
                               content: Text('Thực thi sản xuất thành công!'),
@@ -591,7 +619,11 @@ class _InventoryProductDetailScreenState
     if (!context.mounted) return;
 
     if (success) {
-      await provider.fetchIngredientDetail(widget.ingredient.ingredientId);
+      final kitchenId = context.read<AuthProvider>().kitchenId;
+      await provider.fetchIngredientDetail(
+        widget.ingredient.ingredientId,
+        kitchenId: kitchenId,
+      );
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Xóa lô thành công!')));

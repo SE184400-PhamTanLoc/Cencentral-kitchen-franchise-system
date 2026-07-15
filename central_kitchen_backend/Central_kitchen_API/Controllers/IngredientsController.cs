@@ -18,9 +18,15 @@ public class IngredientsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] bool? isRawMaterial = null, [FromQuery] string? keyword = null)
+    public async Task<IActionResult> GetAll([FromQuery] bool? isRawMaterial = null, [FromQuery] string? keyword = null, [FromQuery] int? kitchenId = null)
     {
-        var ingredients = await _inventoryService.GetIngredientsAsync(isRawMaterial, keyword);
+        var kitchenIdClaim = User.FindFirst("KitchenId")?.Value;
+        if (!kitchenId.HasValue && int.TryParse(kitchenIdClaim, out var claimKitchenId))
+        {
+            kitchenId = claimKitchenId;
+        }
+
+        var ingredients = await _inventoryService.GetIngredientsAsync(isRawMaterial, keyword, kitchenId);
         return Ok(new
         {
             success = true,
@@ -30,9 +36,15 @@ public class IngredientsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, [FromQuery] int? kitchenId = null)
     {
-        var ingredient = await _inventoryService.GetIngredientByIdAsync(id);
+        var kitchenIdClaim = User.FindFirst("KitchenId")?.Value;
+        if (!kitchenId.HasValue && int.TryParse(kitchenIdClaim, out var claimKitchenId))
+        {
+            kitchenId = claimKitchenId;
+        }
+
+        var ingredient = await _inventoryService.GetIngredientByIdAsync(id, kitchenId);
         if (ingredient == null)
             return NotFound(new { success = false, message = "Không tìm thấy nguyên liệu." });
 

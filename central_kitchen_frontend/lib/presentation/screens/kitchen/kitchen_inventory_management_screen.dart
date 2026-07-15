@@ -705,7 +705,7 @@ extension on _KitchenInventoryManagementScreenState {
     );
     final batchCodeController = TextEditingController(text: defaultBatchCode);
     final quantityController = TextEditingController(text: '1');
-    final remainingController = TextEditingController(text: '1');
+    final remainingController = TextEditingController();
     final manufactureDateController = TextEditingController(
       text: DateTime.now().toIso8601String().split('T').first,
     );
@@ -944,9 +944,14 @@ extension on _KitchenInventoryManagementScreenState {
                                 final quantity =
                                     double.tryParse(quantityController.text) ??
                                     0;
+                                final parsedRemaining = double.tryParse(
+                                  remainingController.text,
+                                );
                                 final remaining =
-                                    double.tryParse(remainingController.text) ??
-                                    0;
+                                    (parsedRemaining == null ||
+                                        parsedRemaining <= 0)
+                                    ? quantity
+                                    : parsedRemaining;
 
                                 if (ingredientId == null ||
                                     batchCodeController.text.trim().isEmpty ||
@@ -958,6 +963,19 @@ extension on _KitchenInventoryManagementScreenState {
                                     const SnackBar(
                                       content: Text(
                                         'Vui lòng nhập đủ nguyên liệu, mã lô, số lượng và hạn sử dụng.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                if (remaining < 0 || remaining > quantity) {
+                                  ScaffoldMessenger.of(
+                                    dialogContext,
+                                  ).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Tồn thực tế phải từ 0 đến nhỏ hơn hoặc bằng tổng nhập.',
                                       ),
                                     ),
                                   );
@@ -1512,8 +1530,11 @@ class _IngredientsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final kitchenId = context.read<AuthProvider>().kitchenId;
     return RefreshIndicator(
-      onRefresh: () => context.read<InventoryProvider>().fetchIngredients(),
+      onRefresh: () => context.read<InventoryProvider>().fetchIngredients(
+        kitchenId: kitchenId,
+      ),
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [

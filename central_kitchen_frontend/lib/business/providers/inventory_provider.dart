@@ -66,7 +66,11 @@ class InventoryProvider with ChangeNotifier {
     }).toList();
   }
 
-  Future<void> fetchIngredients({bool? isRawMaterial, String? keyword}) async {
+  Future<void> fetchIngredients({
+    bool? isRawMaterial,
+    String? keyword,
+    int? kitchenId,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -74,6 +78,7 @@ class InventoryProvider with ChangeNotifier {
       final items = await _inventoryDatasource.getIngredients(
         isRawMaterial: isRawMaterial ?? _rawFilter,
         keyword: keyword ?? (_searchQuery.isEmpty ? null : _searchQuery),
+        kitchenId: kitchenId,
       );
       _ingredients
         ..clear()
@@ -87,13 +92,14 @@ class InventoryProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchIngredientDetail(int ingredientId) async {
+  Future<void> fetchIngredientDetail(int ingredientId, {int? kitchenId}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       _selectedIngredient = await _inventoryDatasource.getIngredientById(
         ingredientId,
+        kitchenId: kitchenId,
       );
       _batches
         ..clear()
@@ -118,7 +124,7 @@ class InventoryProvider with ChangeNotifier {
     notifyListeners();
     try {
       final results = await Future.wait([
-        _inventoryDatasource.getIngredients(),
+        _inventoryDatasource.getIngredients(kitchenId: kitchenId),
         _inventoryDatasource.getBatches(kitchenId: kitchenId),
       ]);
       _ingredients

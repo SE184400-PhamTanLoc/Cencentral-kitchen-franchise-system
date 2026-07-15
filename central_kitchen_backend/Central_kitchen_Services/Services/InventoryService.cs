@@ -28,17 +28,17 @@ public class InventoryService : IInventoryService
         _orderRepository = orderRepository;
     }
 
-    public async Task<List<IngredientSummaryDto>> GetIngredientsAsync(bool? isRawMaterial = null, string? keyword = null)
+    public async Task<List<IngredientSummaryDto>> GetIngredientsAsync(bool? isRawMaterial = null, string? keyword = null, int? kitchenId = null)
     {
         var ingredients = await _ingredientRepository.GetAllAsync(isRawMaterial, keyword);
-        return ingredients.Select(MapIngredientSummary).ToList();
+        return ingredients.Select(i => MapIngredientSummary(i, kitchenId)).ToList();
     }
 
-    public async Task<IngredientDetailDto?> GetIngredientByIdAsync(int ingredientId)
+    public async Task<IngredientDetailDto?> GetIngredientByIdAsync(int ingredientId, int? kitchenId = null)
     {
         var ingredient = await _ingredientRepository.GetByIdAsync(ingredientId);
         if (ingredient == null) return null;
-        return MapIngredientDetail(ingredient);
+        return MapIngredientDetail(ingredient, kitchenId);
     }
 
     public async Task<List<BatchResponseDto>> GetBatchesAsync(int? ingredientId = null, int? kitchenId = null)
@@ -359,9 +359,12 @@ public class InventoryService : IInventoryService
             .Sum(b => b.RemainingQuantity) ?? 0m;
     }
 
-    private static IngredientSummaryDto MapIngredientSummary(Ingredient ingredient)
+    private static IngredientSummaryDto MapIngredientSummary(Ingredient ingredient, int? kitchenId = null)
     {
-        var batches = ingredient.Batches ?? new List<Batch>();
+        var batches = (ingredient.Batches ?? new List<Batch>())
+            .Where(b => !kitchenId.HasValue || b.KitchenId == kitchenId.Value)
+            .ToList();
+
         return new IngredientSummaryDto
         {
             IngredientId = ingredient.IngredientId,
@@ -372,7 +375,7 @@ public class InventoryService : IInventoryService
             IsRawMaterial = ingredient.IsRawMaterial ?? true,
             MinStockLevel = ingredient.MinStockLevel ?? 0m,
             CreatedAt = ingredient.CreatedAt,
-            AvailableQuantity = batches.Sum(b => b.RemainingQuantity),
+            AvailableQuantity = GetAvailableQuantity(ingredient, kitchenId),
             BatchCount = batches.Count,
             LatestExpiryDate = batches.Count == 0 ? null : batches.OrderBy(b => b.ExpiryDate).Last().ExpiryDate,
             LatestBatchCode = batches.Count == 0 ? null : batches.OrderBy(b => b.CreatedAt).Last().BatchCode,
@@ -380,9 +383,13 @@ public class InventoryService : IInventoryService
         };
     }
 
-    private static IngredientDetailDto MapIngredientDetail(Ingredient ingredient)
+    private static IngredientDetailDto MapIngredientDetail(Ingredient ingredient, int? kitchenId = null)
     {
-        var batches = (ingredient.Batches ?? new List<Batch>())
+        var scopedBatches = (ingredient.Batches ?? new List<Batch>())
+            .Where(b => !kitchenId.HasValue || b.KitchenId == kitchenId.Value)
+            .ToList();
+
+        var batches = scopedBatches
             .OrderByDescending(b => b.ExpiryDate)
             .ThenByDescending(b => b.CreatedAt)
             .Select(MapBatch)
@@ -398,14 +405,14 @@ public class InventoryService : IInventoryService
             IsRawMaterial = ingredient.IsRawMaterial ?? true,
             MinStockLevel = ingredient.MinStockLevel ?? 0m,
             CreatedAt = ingredient.CreatedAt,
-            AvailableQuantity = ingredient.Batches?.Sum(b => b.RemainingQuantity) ?? 0m,
-            BatchCount = ingredient.Batches?.Count ?? 0,
-            LatestExpiryDate = ingredient.Batches == null || ingredient.Batches.Count == 0
+            AvailableQuantity = GetAvailableQuantity(ingredient, kitchenId),
+            BatchCount = scopedBatches.Count,
+            LatestExpiryDate = scopedBatches.Count == 0
                 ? null
-                : ingredient.Batches.OrderBy(b => b.ExpiryDate).Last().ExpiryDate,
-            LatestBatchCode = ingredient.Batches == null || ingredient.Batches.Count == 0
+                : scopedBatches.OrderBy(b => b.ExpiryDate).Last().ExpiryDate,
+            LatestBatchCode = scopedBatches.Count == 0
                 ? null
-                : ingredient.Batches.OrderBy(b => b.CreatedAt).Last().BatchCode,
+                : scopedBatches.OrderBy(b => b.CreatedAt).Last().BatchCode,
             HasRecipe = ingredient.Recipe != null,
             RecipeDescription = ingredient.Recipe?.Description,
             RecipeInputs = ingredient.Recipe?.RecipeDetails

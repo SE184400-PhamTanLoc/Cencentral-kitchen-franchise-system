@@ -10,25 +10,50 @@ class InventoryDatasource {
 
   InventoryDatasource(this._apiClient);
 
-  Future<List<IngredientModel>> getIngredients({bool? isRawMaterial, String? keyword}) async {
+  Future<List<IngredientModel>> getIngredients({
+    bool? isRawMaterial,
+    String? keyword,
+    int? kitchenId,
+  }) async {
     final response = await _apiClient.get(
       InventoryEndpoints.ingredients,
       queryParameters: {
         ...?(isRawMaterial == null ? null : {'isRawMaterial': isRawMaterial}),
-        ...?(keyword == null || keyword.trim().isEmpty ? null : {'keyword': keyword.trim()}),
+        ...?(keyword == null || keyword.trim().isEmpty
+            ? null
+            : {'keyword': keyword.trim()}),
+        ...?(kitchenId == null ? null : {'kitchenId': kitchenId}),
       },
     );
 
     final List<dynamic> dataList = response.data['data'] ?? [];
-    return dataList.map((json) => IngredientModel.fromJson(Map<String, dynamic>.from(json as Map))).toList();
+    return dataList
+        .map(
+          (json) =>
+              IngredientModel.fromJson(Map<String, dynamic>.from(json as Map)),
+        )
+        .toList();
   }
 
-  Future<IngredientModel> getIngredientById(int ingredientId) async {
-    final response = await _apiClient.get('${InventoryEndpoints.ingredients}/$ingredientId');
-    return IngredientModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+  Future<IngredientModel> getIngredientById(
+    int ingredientId, {
+    int? kitchenId,
+  }) async {
+    final response = await _apiClient.get(
+      '${InventoryEndpoints.ingredients}/$ingredientId',
+      queryParameters: {
+        ...?(kitchenId == null ? null : {'kitchenId': kitchenId}),
+      },
+    );
+    return IngredientModel.fromJson(
+      Map<String, dynamic>.from(response.data['data'] as Map),
+    );
   }
 
-  Future<List<BatchModel>> getBatches({int? ingredientId, int? kitchenId}) async {
+  Future<List<BatchModel>> getBatches({
+    int? ingredientId,
+    int? kitchenId,
+  }) async {
     final response = await _apiClient.get(
       InventoryEndpoints.batches,
       queryParameters: {
@@ -38,26 +63,50 @@ class InventoryDatasource {
     );
 
     final List<dynamic> dataList = response.data['data'] ?? [];
-    return dataList.map((json) => BatchModel.fromJson(Map<String, dynamic>.from(json as Map))).toList();
+    return dataList
+        .map(
+          (json) => BatchModel.fromJson(Map<String, dynamic>.from(json as Map)),
+        )
+        .toList();
   }
 
   Future<BatchModel> createBatch(Map<String, dynamic> payload) async {
-    final response = await _apiClient.post(InventoryEndpoints.batches, data: payload);
-    return BatchModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+    final response = await _apiClient.post(
+      InventoryEndpoints.batches,
+      data: payload,
+    );
+    return BatchModel.fromJson(
+      Map<String, dynamic>.from(response.data['data'] as Map),
+    );
   }
 
-  Future<BatchModel> updateBatch(int batchId, Map<String, dynamic> payload) async {
-    final response = await _apiClient.put('${InventoryEndpoints.batches}/$batchId', data: payload);
-    return BatchModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+  Future<BatchModel> updateBatch(
+    int batchId,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _apiClient.put(
+      '${InventoryEndpoints.batches}/$batchId',
+      data: payload,
+    );
+    return BatchModel.fromJson(
+      Map<String, dynamic>.from(response.data['data'] as Map),
+    );
   }
 
   Future<void> deleteBatch(int batchId) async {
     await _apiClient.delete('${InventoryEndpoints.batches}/$batchId');
   }
 
-  Future<ProductionPlanModel> buildProductionPlan(Map<String, dynamic> payload) async {
-    final response = await _apiClient.post(InventoryEndpoints.productionPlan, data: payload);
-    return ProductionPlanModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+  Future<ProductionPlanModel> buildProductionPlan(
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _apiClient.post(
+      InventoryEndpoints.productionPlan,
+      data: payload,
+    );
+    return ProductionPlanModel.fromJson(
+      Map<String, dynamic>.from(response.data['data'] as Map),
+    );
   }
 
   Future<List<dynamic>> getPendingOrders(int kitchenId) async {
@@ -73,12 +122,19 @@ class InventoryDatasource {
       InventoryEndpoints.autoProductionPlan,
       queryParameters: {'kitchenId': kitchenId},
     );
-    return ProductionPlanModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+    return ProductionPlanModel.fromJson(
+      Map<String, dynamic>.from(response.data['data'] as Map),
+    );
   }
 
   Future<BatchModel> executeProduction(Map<String, dynamic> payload) async {
-    final response = await _apiClient.post(InventoryEndpoints.executeProduction, data: payload);
-    return BatchModel.fromJson(Map<String, dynamic>.from(response.data['data'] as Map));
+    final response = await _apiClient.post(
+      InventoryEndpoints.executeProduction,
+      data: payload,
+    );
+    return BatchModel.fromJson(
+      Map<String, dynamic>.from(response.data['data'] as Map),
+    );
   }
 
   Future<void> dispatchOrder(int orderId) async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../business/providers/auth_provider.dart';
 import '../../../business/providers/inventory_provider.dart';
 import '../../../core/constants/app_theme.dart';
 import '../../../data/models/ingredient_model.dart';
@@ -10,15 +11,18 @@ class InventoryProductListScreen extends StatefulWidget {
   const InventoryProductListScreen({super.key});
 
   @override
-  State<InventoryProductListScreen> createState() => _InventoryProductListScreenState();
+  State<InventoryProductListScreen> createState() =>
+      _InventoryProductListScreenState();
 }
 
-class _InventoryProductListScreenState extends State<InventoryProductListScreen> {
+class _InventoryProductListScreenState
+    extends State<InventoryProductListScreen> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<InventoryProvider>().fetchIngredients();
+      final kitchenId = context.read<AuthProvider>().kitchenId;
+      context.read<InventoryProvider>().fetchIngredients(kitchenId: kitchenId);
     });
   }
 
@@ -30,7 +34,10 @@ class _InventoryProductListScreenState extends State<InventoryProductListScreen>
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Danh sách nguyên liệu', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Danh sách nguyên liệu',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
@@ -41,12 +48,22 @@ class _InventoryProductListScreenState extends State<InventoryProductListScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_outlined),
-            onPressed: () => context.read<InventoryProvider>().fetchIngredients(),
+            onPressed: () {
+              final kitchenId = context.read<AuthProvider>().kitchenId;
+              context.read<InventoryProvider>().fetchIngredients(
+                kitchenId: kitchenId,
+              );
+            },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => context.read<InventoryProvider>().fetchIngredients(),
+        onRefresh: () {
+          final kitchenId = context.read<AuthProvider>().kitchenId;
+          return context.read<InventoryProvider>().fetchIngredients(
+            kitchenId: kitchenId,
+          );
+        },
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
@@ -60,16 +77,28 @@ class _InventoryProductListScreenState extends State<InventoryProductListScreen>
                     _SearchBar(
                       value: provider.searchQuery,
                       onChanged: (value) {
+                        final kitchenId = context
+                            .read<AuthProvider>()
+                            .kitchenId;
                         provider.setSearchQuery(value);
-                        provider.fetchIngredients(keyword: value);
+                        provider.fetchIngredients(
+                          keyword: value,
+                          kitchenId: kitchenId,
+                        );
                       },
                     ),
                     const SizedBox(height: 12),
                     _FilterRow(
                       rawFilter: provider.rawFilter,
                       onChanged: (value) {
+                        final kitchenId = context
+                            .read<AuthProvider>()
+                            .kitchenId;
                         provider.setRawFilter(value);
-                        provider.fetchIngredients(isRawMaterial: value);
+                        provider.fetchIngredients(
+                          isRawMaterial: value,
+                          kitchenId: kitchenId,
+                        );
                       },
                     ),
                   ],
@@ -92,23 +121,24 @@ class _InventoryProductListScreenState extends State<InventoryProductListScreen>
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final item = ingredients[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _IngredientCard(
-                          ingredient: item,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => InventoryProductDetailScreen(ingredient: item)),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    childCount: ingredients.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final item = ingredients[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _IngredientCard(
+                        ingredient: item,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => InventoryProductDetailScreen(
+                                ingredient: item,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }, childCount: ingredients.length),
                 ),
               ),
           ],
@@ -141,11 +171,19 @@ class _TopBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Central Kitchen Inventory', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                const Text(
+                  'Central Kitchen Inventory',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
                 const SizedBox(height: 8),
                 const Text(
                   'Danh mục nguyên liệu và bán thành phẩm',
-                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -163,7 +201,11 @@ class _TopBanner extends StatelessWidget {
               color: Colors.white.withOpacity(0.12),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 34),
+            child: const Icon(
+              Icons.inventory_2_outlined,
+              color: Colors.white,
+              size: 34,
+            ),
           ),
         ],
       ),
@@ -258,9 +300,13 @@ class _FilterRow extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
               ),
-              side: BorderSide(color: selected ? AppTheme.primary : const Color(0xFFE2E8F0)),
+              side: BorderSide(
+                color: selected ? AppTheme.primary : const Color(0xFFE2E8F0),
+              ),
               backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           );
         }).toList(),
@@ -299,7 +345,10 @@ class _IngredientCard extends StatelessWidget {
         child: Row(
           children: [
             (() {
-              final imagePath = getIngredientImage(ingredient.sku, ingredient.name);
+              final imagePath = getIngredientImage(
+                ingredient.sku,
+                ingredient.name,
+              );
               if (imagePath != null) {
                 return Container(
                   width: 54,
@@ -319,7 +368,9 @@ class _IngredientCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      ingredient.isRawMaterial ? AppTheme.secondary : AppTheme.primaryContainer,
+                      ingredient.isRawMaterial
+                          ? AppTheme.secondary
+                          : AppTheme.primaryContainer,
                       AppTheme.primary,
                     ],
                     begin: Alignment.topLeft,
@@ -327,7 +378,12 @@ class _IngredientCard extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: Icon(ingredient.isRawMaterial ? Icons.grain_outlined : Icons.bakery_dining_outlined, color: Colors.white),
+                child: Icon(
+                  ingredient.isRawMaterial
+                      ? Icons.grain_outlined
+                      : Icons.bakery_dining_outlined,
+                  color: Colors.white,
+                ),
               );
             })(),
             const SizedBox(width: 14),
@@ -340,22 +396,43 @@ class _IngredientCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           ingredient.name,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.primary),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primary,
+                          ),
                         ),
                       ),
                       if (isLowStock)
-                        const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.orange,
+                          size: 18,
+                        ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text('SKU: ${ingredient.sku}', style: const TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12)),
+                  Text(
+                    'SKU: ${ingredient.sku}',
+                    style: const TextStyle(
+                      color: AppTheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _Tag(label: ingredient.isRawMaterial ? 'Nguyên liệu thô' : 'Bán thành phẩm'),
-                      _Tag(label: '${ingredient.availableQuantity.toStringAsFixed(1)} ${ingredient.unit}'),
+                      _Tag(
+                        label: ingredient.isRawMaterial
+                            ? 'Nguyên liệu thô'
+                            : 'Bán thành phẩm',
+                      ),
+                      _Tag(
+                        label:
+                            '${ingredient.availableQuantity.toStringAsFixed(1)} ${ingredient.unit}',
+                      ),
                       _Tag(label: '${ingredient.batchCount} lô'),
                     ],
                   ),
@@ -382,7 +459,14 @@ class _Tag extends StatelessWidget {
         color: AppTheme.background,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.onSurfaceVariant)),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }
