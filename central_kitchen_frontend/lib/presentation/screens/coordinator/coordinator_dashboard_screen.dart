@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../business/providers/auth_provider.dart';
 import '../../../business/providers/manager_provider.dart';
 import '../../../core/constants/app_theme.dart';
+import '../../../data/models/manager_stats_model.dart';
 import '../../widgets/unified_order_card.dart';
 import '../../widgets/shared_order_details_modal.dart';
 import '../shared/chat_screen.dart';
@@ -16,10 +17,12 @@ class CoordinatorDashboardScreen extends StatefulWidget {
   const CoordinatorDashboardScreen({super.key});
 
   @override
-  State<CoordinatorDashboardScreen> createState() => _CoordinatorDashboardScreenState();
+  State<CoordinatorDashboardScreen> createState() =>
+      _CoordinatorDashboardScreenState();
 }
 
-class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen> with SingleTickerProviderStateMixin {
+class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
   final TextEditingController _searchController = TextEditingController();
@@ -30,10 +33,16 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
     _animController.forward();
-    
+
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text;
@@ -41,8 +50,16 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ManagerProvider>().loadDashboardData();
+      _loadCoordinatorData();
     });
+  }
+
+  Future<void> _loadCoordinatorData() async {
+    final manager = context.read<ManagerProvider>();
+    await Future.wait([
+      manager.loadDashboardData(),
+      manager.loadOrderHistory(),
+    ]);
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -74,7 +91,10 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
                     backgroundColor: AppTheme.primaryContainer,
                     child: Text(
                       _avatarInitial(auth.currentUser?.fullName),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   title: Text(auth.currentUser?.fullName ?? 'Điều phối viên'),
@@ -135,7 +155,7 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
       FadeTransition(
         opacity: _fadeAnimation,
         child: RefreshIndicator(
-          onRefresh: () => manager.loadDashboardData(),
+          onRefresh: _loadCoordinatorData,
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
@@ -176,7 +196,11 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
           children: [
             Text(
               'Xin chào, ${auth.currentUser?.fullName ?? 'Điều phối viên'}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.primary),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.primary,
+              ),
             ),
             const SizedBox(height: 3),
             const Text(
@@ -188,7 +212,7 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
         actions: [
           IconButton(
             tooltip: 'Tải lại',
-            onPressed: () => context.read<ManagerProvider>().loadDashboardData(),
+            onPressed: _loadCoordinatorData,
             icon: const Icon(Icons.refresh_outlined),
           ),
           const SizedBox(width: 4),
@@ -201,7 +225,10 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
                 backgroundColor: AppTheme.primaryContainer,
                 child: Text(
                   _avatarInitial(auth.currentUser?.fullName),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -367,8 +394,15 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Tìm theo mã đơn hoặc tên cửa hàng...',
-                hintStyle: TextStyle(color: AppTheme.outline.withOpacity(0.6), fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primary, size: 20),
+                hintStyle: TextStyle(
+                  color: AppTheme.outline.withOpacity(0.6),
+                  fontSize: 14,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppTheme.primary,
+                  size: 20,
+                ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear_rounded, size: 18),
@@ -380,7 +414,10 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
               ),
             ),
           ),
@@ -394,6 +431,8 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
               _buildFilterChip('Chờ giao'),
               const SizedBox(width: 8),
               _buildFilterChip('Đang giao'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Đã giao'),
             ],
           ),
         ],
@@ -443,30 +482,60 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
       );
     }
 
-    // Filter to show only Delivering/Dispatched/Shipping and Approved
-    var deliveryOrders = manager.pendingOrders.where((o) {
-      final status = o.orderStatus.toUpperCase();
-      return status == 'APPROVED' || 
-             status == 'DELIVERING' || 
-             status == 'SHIPPING' || 
-             status == 'DISPATCHED';
-    }).toList();
+    final combinedOrders = <int, ManagerPendingOrderModel>{};
+    for (final order in manager.pendingOrders) {
+      combinedOrders[order.orderId] = order;
+    }
+    for (final order in manager.orderHistory) {
+      combinedOrders[order.orderId] = order;
+    }
+
+    // Coordinator sees both active deliveries and delivered history.
+    var deliveryOrders =
+        combinedOrders.values.where((o) {
+          final status = o.orderStatus.toUpperCase();
+          return status == 'APPROVED' ||
+              status == 'DELIVERING' ||
+              status == 'SHIPPING' ||
+              status == 'DISPATCHED' ||
+              status == 'SHIPPED' ||
+              status == 'DELIVERED';
+        }).toList()..sort((a, b) {
+          final aTime = a.updatedAt ?? a.createdAt;
+          final bTime = b.updatedAt ?? b.createdAt;
+          return bTime.compareTo(aTime);
+        });
 
     // Apply Search
     if (_searchQuery.isNotEmpty) {
-      deliveryOrders = deliveryOrders.where((o) =>
-          o.orderCode.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          o.storeName.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+      deliveryOrders = deliveryOrders
+          .where(
+            (o) =>
+                o.orderCode.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ||
+                o.storeName.toLowerCase().contains(_searchQuery.toLowerCase()),
+          )
+          .toList();
     }
 
     // Apply Filter
     if (_selectedStatusFilter == 'Chờ giao') {
-      deliveryOrders = deliveryOrders.where((o) => o.orderStatus.toUpperCase() == 'APPROVED').toList();
+      deliveryOrders = deliveryOrders
+          .where((o) => o.orderStatus.toUpperCase() == 'APPROVED')
+          .toList();
     } else if (_selectedStatusFilter == 'Đang giao') {
       deliveryOrders = deliveryOrders.where((o) {
         final status = o.orderStatus.toUpperCase();
-        return status == 'DELIVERING' || status == 'SHIPPING' || status == 'DISPATCHED';
+        return status == 'DELIVERING' ||
+            status == 'SHIPPING' ||
+            status == 'DISPATCHED' ||
+            status == 'SHIPPED';
       }).toList();
+    } else if (_selectedStatusFilter == 'Đã giao') {
+      deliveryOrders = deliveryOrders
+          .where((o) => o.orderStatus.toUpperCase() == 'DELIVERED')
+          .toList();
     }
 
     if (deliveryOrders.isEmpty) {
@@ -483,11 +552,19 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.inventory_2_outlined, size: 48, color: AppTheme.outline.withOpacity(0.5)),
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 48,
+                  color: AppTheme.outline.withOpacity(0.5),
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   'Không tìm thấy đơn hàng nào.',
-                  style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 15, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: AppTheme.onSurfaceVariant,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -499,24 +576,21 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final order = deliveryOrders[index];
-            return UnifiedOrderCard(
-              orderId: order.orderId,
-              orderCode: order.orderCode,
-              storeName: order.storeName,
-              orderStatus: order.orderStatus,
-              createdAt: order.orderDate,
-              totalAmount: order.totalAmount,
-              itemCount: 0,
-              onTap: () {
-                _showOrderDetailsModal(context, order);
-              },
-            );
-          },
-          childCount: deliveryOrders.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final order = deliveryOrders[index];
+          return UnifiedOrderCard(
+            orderId: order.orderId,
+            orderCode: order.orderCode,
+            storeName: order.storeName,
+            orderStatus: order.orderStatus,
+            createdAt: order.orderDate,
+            totalAmount: order.totalAmount,
+            itemCount: 0,
+            onTap: () {
+              _showOrderDetailsModal(context, order);
+            },
+          );
+        }, childCount: deliveryOrders.length),
       ),
     );
   }
@@ -536,7 +610,11 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
           const SizedBox(height: 8),
           const Text(
             'Hệ Thống Bếp Trung Tâm • Vận Hành Giao Hàng',
-            style: TextStyle(fontSize: 11, color: AppTheme.outline, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 11,
+              color: AppTheme.outline,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -550,7 +628,7 @@ class _CoordinatorDashboardScreenState extends State<CoordinatorDashboardScreen>
       orderCode: order.orderCode,
       orderStatus: order.orderStatus,
       onRefresh: () {
-        context.read<ManagerProvider>().loadDashboardData();
+        _loadCoordinatorData();
       },
     );
   }
@@ -592,13 +670,30 @@ class _MenuTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 14)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.5), size: 20),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: color.withOpacity(0.5),
+              size: 20,
+            ),
           ],
         ),
       ),
